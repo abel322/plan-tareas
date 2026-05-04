@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark theme (default) */
+    --background: 10 14 26;
+    --surface: 15 20 25;
+    --surface-elevated: 26 31 46;
+    --border: 42 49 66;
+    
+    --text-primary: 232 237 244;
+    --text-secondary: 168 178 193;
+    --text-tertiary: 107 114 128;
+    --text-muted: 75 85 99;
+  }
+
+  .light {
+    /* Light theme - Colores más oscuros para mejor contraste */
+    --background: 255 255 255;
+    --surface: 249 250 251;
+    --surface-elevated: 243 244 246;
+    --border: 209 213 219;
+    
+    --text-primary: 0 0 0;
+    --text-secondary: 31 41 55;
+    --text-tertiary: 75 85 99;
+    --text-muted: 107 114 128;
+  }
+
+  * {
+    border-color: rgb(var(--border) / 0.4);
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans antialiased transition-colors duration-300;
+  }
+  
+  /* Forzar colores oscuros en modo claro */
+  .light h1,
+  .light h2,
+  .light h3,
+  .light h4,
+  .light h5,
+  .light h6 {
+    color: rgb(0 0 0) !important;
+  }
+  
+  .light .text-text-primary {
+    color: rgb(0 0 0) !important;
+  }
+  
+  .light .text-text-secondary {
+    color: rgb(31 41 55) !important;
+  }
+  
+  .light .text-text-tertiary {
+    color: rgb(75 85 99) !important;
+  }
+  
+  .light .text-text-muted {
+    color: rgb(107 114 128) !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .surface-elevated {
+    background-color: rgb(var(--surface));
+    border: 1px solid rgb(var(--border) / 0.4);
+  }
+  
+  .surface-elevated-high {
+    background-color: rgb(var(--surface-elevated));
+    border: 1px solid rgb(var(--border) / 0.5);
+  }
+  
+  .critical-path-glow {
+    animation: criticalPulse 2s ease-in-out infinite;
+    border-color: rgb(139 92 246 / 0.6);
+  }
+  
+  /* Light theme specific adjustments */
+  .light .surface-elevated {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+  
+  .light .critical-path-glow {
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3);
+  }
+  
+  /* Asegurar que los números y textos sean oscuros en modo claro */
+  .light p,
+  .light span,
+  .light div {
+    color: inherit;
+  }
+  
+  .light .font-bold,
+  .light .font-extrabold,
+  .light .font-semibold {
+    color: rgb(0 0 0);
+  }
+}
