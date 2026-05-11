@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { calculateCPM, CPMTask } from "@/lib/algorithms/cpm"
+export const dynamic = 'force-dynamic';
 
 // POST /api/cpm/calculate - Calcular ruta crítica de un proyecto
 export async function POST(request: NextRequest) {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Actualizar tareas críticas en la base de datos
     const criticalTaskIds = cpmResult.criticalPath
-    
+
     // Marcar todas como no críticas primero
     await prisma.task.updateMany({
       where: { projectId },
