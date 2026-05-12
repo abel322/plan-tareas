@@ -67,6 +67,10 @@ model Task {
   endDate           DateTime?
   estimatedDuration Float?
   tags              String?
+  // Campos CPM (Critical Path Method)
+  earlyStart        Float?           // ES: Tiempo de inicio temprano
+  lateStart         Float?           // LS: Tiempo de inicio tardío
+  slack             Float?           // Holgura total (LS - ES)
   isCritical        Boolean          @default(false)
   dependencies      Dependency[]     @relation("TaskDependencies")
   dependents        Dependency[]     @relation("DependentTasks")
