@@ -3,21 +3,15 @@ import { prisma } from "@/lib/prisma"
 import { createProjectSchema } from "@/lib/validations/project"
 import { auth } from "@/auth"
 
-// GET /api/projects - Obtener todos los proyectos del usuario autenticado o demo
+// GET /api/projects - Obtener todos los proyectos del usuario autenticado
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
-    let userId = session?.user?.id
-
-    // Fallback para modo demo/desarrollo si no hay sesión activa
-    if (!userId) {
-      const demoUser = await prisma.user.findFirst()
-      userId = demoUser?.id
-    }
+    const userId = session?.user?.id
 
     if (!userId) {
       return NextResponse.json(
-        { error: "No autorizado. Inicie sesión para ver los proyectos o configure un usuario en la base de datos." },
+        { error: "No autorizado. Inicie sesión para ver los proyectos." },
         { status: 401 }
       )
     }
@@ -58,26 +52,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    let userId = session?.user?.id
-
-    // Fallback para modo demo/desarrollo si no hay sesión activa
-    if (!userId) {
-      const demoUser = await prisma.user.findFirst()
-      userId = demoUser?.id
-    }
+    const userId = session?.user?.id
 
     if (!userId) {
       return NextResponse.json(
-        { error: "No autorizado. Inicie sesión para crear proyectos o configure un usuario en la base de datos." },
+        { error: "No autorizado. Inicie sesión para crear proyectos." },
         { status: 401 }
       )
     }
 
     const body = await request.json()
-    console.log("Datos recibidos para proyecto:", body)
-    
     const validatedData = createProjectSchema.parse(body)
-    console.log("Datos validados:", validatedData)
 
     const project = await prisma.project.create({
       data: {
@@ -88,7 +73,6 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log("Proyecto creado:", project)
     return NextResponse.json(project, { status: 201 })
   } catch (error: any) {
     console.error("Error en /api/projects:", error)
@@ -113,4 +97,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

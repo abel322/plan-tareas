@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { ThemeProvider } from "@/lib/theme-provider"
+import { AuthProvider } from "@/components/providers/session-provider"
 
 export const metadata: Metadata = {
   title: "Project Management Platform",
@@ -15,9 +16,11 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body>
-        <ThemeProvider defaultTheme="dark" storageKey="projectflow-theme">
-          {children}
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider defaultTheme="dark" storageKey="projectflow-theme">
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )

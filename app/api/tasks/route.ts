@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createTaskSchema } from "@/lib/validations/project"
+import { auth } from "@/auth"
 
 // GET /api/tasks - Obtener todas las tareas
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "No autorizado" },
+        { status: 401 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const projectId = searchParams.get("projectId")
     const status = searchParams.get("status")
@@ -39,10 +48,10 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json(tasks)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching tasks:", error)
     return NextResponse.json(
-      { error: "Error al obtener tareas" },
+      { error: error.message || "Error al obtener tareas" },
       { status: 500 }
     )
   }
@@ -51,11 +60,16 @@ export async function GET(request: NextRequest) {
 // POST /api/tasks - Crear nueva tarea
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "No autorizado" },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
-    console.log("Datos recibidos:", body)
-    
     const validatedData = createTaskSchema.parse(body)
-    console.log("Datos validados:", validatedData)
 
     const task = await prisma.task.create({
       data: {
@@ -77,8 +91,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(task, { status: 201 })
   } catch (error: any) {
     console.error("Error creating task:", error)
-    console.error("Error details:", error.message)
-    console.error("Error stack:", error.stack)
 
     if (error.name === "ZodError") {
       return NextResponse.json(

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession, signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -11,7 +12,9 @@ import {
   Settings,
   Network,
   X,
+  LogOut,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -29,14 +32,16 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
+  const { data: session } = useSession()
+
+  const userName = session?.user?.name || "Usuario"
+  const userEmail = session?.user?.email || "Sin correo"
 
   return (
     <aside
       className={cn(
         "w-64 bg-background border-r border-border/30 flex flex-col shrink-0 transition-transform duration-300 ease-in-out",
-        // Desktop styles: fixed height/min-h-screen, static position
         "md:static md:translate-x-0 md:min-h-screen md:z-auto",
-        // Mobile styles: fixed overlay drawer
         "fixed inset-y-0 left-0 z-50 h-full shadow-2xl md:shadow-none",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}
@@ -85,16 +90,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </nav>
 
       {/* User section */}
-      <div className="p-4 border-t border-border/30">
+      <div className="p-4 border-t border-border/30 space-y-2">
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-intelligence to-electric-cyan shrink-0" />
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-intelligence to-electric-cyan shrink-0 flex items-center justify-center text-xs font-bold text-white uppercase">
+            {userName.slice(0, 2)}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-text-primary truncate">Usuario</p>
-            <p className="text-xs text-text-tertiary truncate">user@example.com</p>
+            <p className="text-sm font-medium text-text-primary truncate">{userName}</p>
+            <p className="text-xs text-text-tertiary truncate">{userEmail}</p>
           </div>
         </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="w-full justify-start text-xs text-text-tertiary hover:text-critical hover:bg-critical/10 gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          Cerrar Sesión
+        </Button>
       </div>
     </aside>
   )
 }
-
