@@ -94,7 +94,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-ink-primary">
             Proyectos
@@ -103,7 +103,7 @@ export default function ProjectsPage() {
             Gestiona y monitorea todos tus proyectos
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+        <Button className="gap-2 shrink-0 self-start sm:self-auto" onClick={() => setCreateDialogOpen(true)}>
           <Plus className="w-4 h-4" />
           Nuevo Proyecto
         </Button>
@@ -123,7 +123,7 @@ export default function ProjectsPage() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-ink-tertiary">Total</p>

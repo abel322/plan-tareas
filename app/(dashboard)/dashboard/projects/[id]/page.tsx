@@ -149,9 +149,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       </Link>
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="text-3xl font-extrabold tracking-tight text-ink-primary">
               {project.name}
             </h1>
@@ -162,7 +162,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             {project.description || "Sin descripción"}
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setCreateTaskDialogOpen(true)}>
+        <Button className="gap-2 shrink-0 self-start sm:self-auto" onClick={() => setCreateTaskDialogOpen(true)}>
           <Plus className="w-4 h-4" />
           Nueva Tarea
         </Button>

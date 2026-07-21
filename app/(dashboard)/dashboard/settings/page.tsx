@@ -123,16 +123,16 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sidebar */}
-        <div className="space-y-2">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar Tabs */}
+        <div className="flex flex-row overflow-x-auto pb-2 gap-2 lg:flex-col lg:space-y-2 lg:gap-0 lg:pb-0 lg:w-64 shrink-0 border-b border-border/30 lg:border-none">
           {sidebarItems.map((item) => {
             const Icon = item.icon
             return (
               <Button
                 key={item.id}
                 variant={activeSection === item.id ? "default" : "ghost"}
-                className="w-full justify-start gap-2"
+                className="justify-start gap-2 shrink-0 whitespace-nowrap lg:w-full"
                 onClick={() => setActiveSection(item.id)}
               >
                 <Icon className="w-4 h-4" />
@@ -143,7 +143,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="flex-1 space-y-6 min-w-0">
           {/* Profile Section */}
           {activeSection === "profile" && (
             <Card>
@@ -171,7 +171,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nombre</Label>
                     <Input 
@@ -200,7 +200,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <Button 
                     className="gap-2" 
                     onClick={handleSaveProfile}
