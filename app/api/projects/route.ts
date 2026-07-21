@@ -1,15 +1,32 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createProjectSchema } from "@/lib/validations/project"
+import { auth } from "@/auth"
 
-// GET /api/projects - Obtener todos los proyectos
+// GET /api/projects - Obtener todos los proyectos del usuario autenticado o demo
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    let userId = session?.user?.id
+
+    // Fallback para modo demo/desarrollo si no hay sesión activa
+    if (!userId) {
+      const demoUser = await prisma.user.findFirst()
+      userId = demoUser?.id
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "No autorizado. Inicie sesión para ver los proyectos o configure un usuario en la base de datos." },
+        { status: 401 }
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get("status")
     const priority = searchParams.get("priority")
 
-    const where: any = {}
+    const where: any = { userId }
     if (status) where.status = status
     if (priority) where.priority = priority
 
@@ -28,10 +45,10 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json(projects)
-  } catch (error) {
-    console.error("Error fetching projects:", error)
+  } catch (error: any) {
+    console.error("Error en /api/projects:", error)
     return NextResponse.json(
-      { error: "Error al obtener proyectos" },
+      { error: error.message || "Error al obtener proyectos" },
       { status: 500 }
     )
   }
@@ -40,30 +57,32 @@ export async function GET(request: NextRequest) {
 // POST /api/projects - Crear nuevo proyecto
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    let userId = session?.user?.id
+
+    // Fallback para modo demo/desarrollo si no hay sesión activa
+    if (!userId) {
+      const demoUser = await prisma.user.findFirst()
+      userId = demoUser?.id
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "No autorizado. Inicie sesión para crear proyectos o configure un usuario en la base de datos." },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     console.log("Datos recibidos para proyecto:", body)
     
     const validatedData = createProjectSchema.parse(body)
     console.log("Datos validados:", validatedData)
 
-    // TODO: Obtener userId de la sesión
-    // Por ahora, buscar o crear el primer usuario en la base de datos
-    let firstUser = await prisma.user.findFirst()
-    
-    if (!firstUser) {
-      // Crear usuario por defecto si no existe
-      firstUser = await prisma.user.create({
-        data: {
-          name: "Usuario Demo",
-          email: "demo@projectflow.com",
-        },
-      })
-    }
-
     const project = await prisma.project.create({
       data: {
         ...validatedData,
-        userId: firstUser.id,
+        userId: userId,
         startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
         endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
       },
@@ -72,12 +91,9 @@ export async function POST(request: NextRequest) {
     console.log("Proyecto creado:", project)
     return NextResponse.json(project, { status: 201 })
   } catch (error: any) {
-    console.error("Error creating project:", error)
-    console.error("Error details:", error.message)
-    console.error("Error stack:", error.stack)
+    console.error("Error en /api/projects:", error)
     
     if (error.name === "ZodError") {
-      console.error("Validation errors:", error.errors)
       return NextResponse.json(
         { error: "Datos inválidos", details: error.errors },
         { status: 400 }
@@ -97,3 +113,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
