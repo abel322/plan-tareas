@@ -41,6 +41,11 @@ export async function GET(request: NextRequest) {
           },
         },
         pertEstimation: true,
+        dependencies: {
+          include: {
+            dependsOn: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
@@ -70,12 +75,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const validatedData = createTaskSchema.parse(body)
+    const { dependsOnId, ...dataToCreate } = validatedData
 
     const task = await prisma.task.create({
       data: {
-        ...validatedData,
-        startDate: validatedData.startDate ? new Date(validatedData.startDate) : null,
-        endDate: validatedData.endDate ? new Date(validatedData.endDate) : null,
+        ...dataToCreate,
+        startDate: dataToCreate.startDate ? new Date(dataToCreate.startDate) : null,
+        endDate: dataToCreate.endDate ? new Date(dataToCreate.endDate) : null,
       },
       include: {
         assignee: {
@@ -85,8 +91,23 @@ export async function POST(request: NextRequest) {
             email: true,
           },
         },
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     })
+
+    if (dependsOnId) {
+      await prisma.dependency.create({
+        data: {
+          taskId: task.id,
+          dependsOnId: dependsOnId,
+        },
+      })
+    }
 
     return NextResponse.json(task, { status: 201 })
   } catch (error: any) {

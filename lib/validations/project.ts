@@ -23,6 +23,7 @@ export const createTaskSchema = z.object({
   endDate: z.string().optional(),
   estimatedDuration: z.number().positive().optional(),
   tags: z.string().optional(),
+  dependsOnId: z.string().optional(),
 })
 
 export const updateTaskSchema = createTaskSchema.partial().omit({ projectId: true })

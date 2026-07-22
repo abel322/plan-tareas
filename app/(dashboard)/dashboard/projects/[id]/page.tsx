@@ -172,6 +172,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         open={createTaskDialogOpen}
         onOpenChange={setCreateTaskDialogOpen}
         projectId={params.id}
+        onTaskCreated={fetchProjectData}
       />
 
       {/* Stats Grid */}

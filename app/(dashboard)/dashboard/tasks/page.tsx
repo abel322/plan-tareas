@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { EditTaskDialog } from "@/components/tasks/edit-task-dialog"
 import {
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
   User,
   Edit3,
   Trash2,
+  Plus,
 } from "lucide-react"
 
 const priorityVariants = {
@@ -49,24 +51,25 @@ export default function TasksPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<any>(null)
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const res = await fetch('/api/tasks')
-        if (res.ok) {
-          const data = await res.json()
-          setTasks(data)
-        }
-      } catch (error) {
-        console.error("Error fetching tasks:", error)
-      } finally {
-        setLoading(false)
+  const fetchTasks = async () => {
+    try {
+      const res = await fetch('/api/tasks')
+      if (res.ok) {
+        const data = await res.json()
+        setTasks(data)
       }
+    } catch (error) {
+      console.error("Error fetching tasks:", error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchTasks()
   }, [])
 
@@ -88,7 +91,7 @@ export default function TasksPage() {
         })
         
         if (res.ok) {
-          setTasks(tasks.filter(t => t.id !== task.id)) // Remove from state
+          setTasks(tasks.filter(t => t.id !== task.id))
         } else {
           alert('Error al eliminar la tarea')
         }
@@ -141,14 +144,26 @@ export default function TasksPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-ink-primary">
-          Tareas
-        </h1>
-        <p className="text-ink-secondary mt-1">
-          Gestiona todas las tareas de tus proyectos
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-ink-primary">
+            Tareas
+          </h1>
+          <p className="text-ink-secondary mt-1">
+            Gestiona todas las tareas de tus proyectos
+          </p>
+        </div>
+        <Button className="gap-2 shrink-0 self-start sm:self-auto" onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="w-4 h-4" />
+          Nueva Tarea
+        </Button>
       </div>
+
+      <CreateTaskDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onTaskCreated={fetchTasks}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -249,7 +264,7 @@ export default function TasksPage() {
                 <Filter className="w-12 h-12 text-ink-muted mx-auto mb-4" />
                 <p className="text-ink-secondary">
                   {tasks.length === 0 
-                    ? "No hay tareas. Crea un proyecto y añade tareas para comenzar."
+                    ? "No hay tareas. Crea una tarea para comenzar."
                     : "No se encontraron tareas con los filtros aplicados"}
                 </p>
               </CardContent>
@@ -333,8 +348,8 @@ export default function TasksPage() {
                         {/* Meta Info */}
                         <div className="flex flex-wrap items-center gap-4 text-xs text-ink-tertiary">
                           <div className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${statusColors[task.status as keyof typeof statusColors].replace('text-', 'bg-')}`} />
-                            <span>{statusLabels[task.status as keyof typeof statusLabels]}</span>
+                            <div className={`w-2 h-2 rounded-full ${statusColors[task.status as keyof typeof statusColors]?.replace('text-', 'bg-') || 'bg-ink-tertiary'}`} />
+                            <span>{statusLabels[task.status as keyof typeof statusLabels] || task.status}</span>
                           </div>
 
                           {task.estimatedDuration && (
@@ -364,12 +379,10 @@ export default function TasksPage() {
                           )}
 
                           {task.project && (
-                            <>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-ink-muted">•</span>
-                                <span>{task.project.name}</span>
-                              </div>
-                            </>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-ink-muted">•</span>
+                              <span className="font-medium text-electric-cyan">{task.project.name}</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -393,21 +406,7 @@ export default function TasksPage() {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         task={editingTask}
-        onTaskUpdated={() => {
-          // Refresh tasks
-          const fetchTasks = async () => {
-            try {
-              const res = await fetch('/api/tasks')
-              if (res.ok) {
-                const data = await res.json()
-                setTasks(data)
-              }
-            } catch (error) {
-              console.error("Error fetching tasks:", error)
-            }
-          }
-          fetchTasks()
-        }}
+        onTaskUpdated={fetchTasks}
       />
     </div>
   )
