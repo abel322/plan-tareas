@@ -108,3 +108,24 @@
     color: rgb(0 0 0);
   }
 }
+
+/* Personalización de scrollbar para tema oscuro/neón */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a; /* Slate oscuro */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155; /* Gris oscuro elegante */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4; /* Cian neón al pasar el mouse */
+}
+
