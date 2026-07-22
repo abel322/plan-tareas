@@ -15,10 +15,17 @@ import {
   AlertCircle,
   Edit3,
   Trash2,
+  Layers,
 } from "lucide-react"
 import Link from "next/link"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { EditTaskDialog } from "@/components/tasks/edit-task-dialog"
+import dynamic from "next/dynamic"
+
+const GanttChart = dynamic(
+  () => import("@/components/projects/gantt-chart").then((mod) => mod.GanttChart),
+  { ssr: false }
+)
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
@@ -28,6 +35,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [project, setProject] = useState<any>(null)
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<"tasks" | "gantt">("tasks")
 
   const fetchProjectData = async () => {
     try {
@@ -307,98 +315,141 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </Card>
       </div>
 
+      {/* Tabs */}
+      <div className="flex border-b border-border/20 pt-2">
+        <button
+          onClick={() => setActiveTab("tasks")}
+          className={`px-6 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
+            activeTab === "tasks"
+              ? "border-electric-cyan text-electric-cyan bg-electric-cyan/5"
+              : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface/10"
+          }`}
+        >
+          Lista de Tareas
+        </button>
+        <button
+          onClick={() => setActiveTab("gantt")}
+          className={`px-6 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
+            activeTab === "gantt"
+              ? "border-electric-cyan text-electric-cyan bg-electric-cyan/5"
+              : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface/10"
+          }`}
+        >
+          Diagrama de Gantt
+        </button>
+      </div>
+
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tasks List */}
+        {/* Left Side Content (Tasks or Gantt) */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tareas del Proyecto</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {tasks.length === 0 ? (
-                <div className="py-12 text-center">
-                  <p className="text-ink-secondary">No hay tareas en este proyecto</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`group relative flex items-center justify-between gap-4 p-4 rounded-lg border transition-all ${
-                        task.isCritical
-                          ? "border-intelligence/50 bg-intelligence/5 critical-path-glow"
-                          : "border-border/40 bg-surface/10 hover:bg-surface/30 hover:border-border/60"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all ${
-                            task.status === "COMPLETED"
-                              ? "bg-success border-success text-midnight"
-                              : "border-text-secondary hover:border-electric-cyan"
-                          }`}
-                          onClick={(e) => handleToggleTaskStatus(task, e)}
-                        >
-                          {task.status === "COMPLETED" && (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-midnight stroke-[3]" />
-                          )}
-                        </div>
-                        <div className="flex-1 pr-4 min-w-0">
-                          <p
-                            className={`font-semibold text-sm tracking-wide transition-all ${
+          {activeTab === "tasks" ? (
+            <Card className="border-border/30">
+              <CardHeader>
+                <CardTitle>Tareas del Proyecto</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {tasks.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <p className="text-ink-secondary">No hay tareas en este proyecto</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className={`group relative flex items-center justify-between gap-4 p-4 rounded-lg border transition-all ${
+                          task.isCritical
+                            ? "border-intelligence/50 bg-intelligence/5 critical-path-glow"
+                            : "border-border/40 bg-surface/10 hover:bg-surface/30 hover:border-border/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all ${
                               task.status === "COMPLETED"
-                                ? "text-text-muted line-through opacity-70"
-                                : "text-text-primary"
+                                ? "bg-success border-success text-midnight"
+                                : "border-text-secondary hover:border-electric-cyan"
                             }`}
+                            onClick={(e) => handleToggleTaskStatus(task, e)}
                           >
-                            {task.name}
-                          </p>
+                            {task.status === "COMPLETED" && (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-midnight stroke-[3]" />
+                            )}
+                          </div>
+                          <div className="flex-1 pr-4 min-w-0">
+                            <p
+                              className={`font-semibold text-sm tracking-wide transition-all ${
+                                task.status === "COMPLETED"
+                                  ? "text-text-muted line-through opacity-70"
+                                  : "text-text-primary"
+                              }`}
+                            >
+                              {task.name}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {task.isCritical && (
-                          <Badge variant="intelligence" className="text-xs">
-                            Crítica
+                        <div className="flex items-center gap-2 shrink-0">
+                          {task.isCritical && (
+                            <Badge variant="intelligence" className="text-xs">
+                              Crítica
+                            </Badge>
+                          )}
+                          <Badge
+                            variant={
+                              task.priority === "CRITICAL"
+                                ? "critical"
+                                : task.priority === "HIGH"
+                                ? "warning"
+                                : "default"
+                            }
+                            className="text-xs font-semibold"
+                          >
+                            {task.priority}
                           </Badge>
-                        )}
-                        <Badge
-                          variant={
-                            task.priority === "CRITICAL"
-                              ? "critical"
-                              : task.priority === "HIGH"
-                              ? "warning"
-                              : "default"
-                          }
-                          className="text-xs font-semibold"
-                        >
-                          {task.priority}
-                        </Badge>
-                        <div className="flex gap-1.5 ml-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0 border-border/60 hover:border-electric-cyan hover:bg-electric-cyan/20 transition-all"
-                            onClick={(e) => handleEditTask(task, e)}
-                          >
-                            <Edit3 className="w-4 h-4 text-electric-cyan" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0 border-border/60 hover:border-critical hover:bg-critical/20 transition-all"
-                            onClick={(e) => handleDeleteTask(task, e)}
-                          >
-                            <Trash2 className="w-4 h-4 text-critical" />
-                          </Button>
+                          <div className="flex gap-1.5 ml-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0 border-border/60 hover:border-electric-cyan hover:bg-electric-cyan/20 transition-all"
+                              onClick={(e) => handleEditTask(task, e)}
+                            >
+                              <Edit3 className="w-4 h-4 text-electric-cyan" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0 border-border/60 hover:border-critical hover:bg-critical/20 transition-all"
+                              onClick={(e) => handleDeleteTask(task, e)}
+                            >
+                              <Trash2 className="w-4 h-4 text-critical" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-border/30">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Cronograma del Proyecto (Gantt)</CardTitle>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5 text-electric-cyan" />
+                  Visualización Temporal
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <GanttChart
+                  tasks={tasks}
+                  projectStartDate={project.startDate}
+                  projectEndDate={project.endDate}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
