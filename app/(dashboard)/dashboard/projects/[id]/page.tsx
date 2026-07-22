@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,8 +20,8 @@ import Link from "next/link"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { EditTaskDialog } from "@/components/tasks/edit-task-dialog"
 
-export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<any>(null)
