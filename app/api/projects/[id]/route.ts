@@ -5,11 +5,12 @@ import { updateProjectSchema } from "@/lib/validations/project"
 // GET /api/projects/[id] - Obtener proyecto por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const project = await prisma.project.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         objectives: true,
         tasks: {
@@ -49,11 +50,17 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(project)
-  } catch (error) {
-    console.error("Error fetching project:", error)
+    // Asegurarse de retornar un arreglo vacío si no existen tareas
+    const responseData = {
+      ...project,
+      tasks: project.tasks || [],
+    }
+
+    return NextResponse.json(responseData)
+  } catch (error: any) {
+    console.error("Error en GET /api/projects/[id]:", error)
     return NextResponse.json(
-      { error: "Error al obtener proyecto" },
+      { error: error.message || "Error al obtener proyecto" },
       { status: 500 }
     )
   }
@@ -62,14 +69,15 @@ export async function GET(
 // PATCH /api/projects/[id] - Actualizar proyecto
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const validatedData = updateProjectSchema.parse(body)
 
     const project = await prisma.project.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...validatedData,
         startDate: validatedData.startDate ? new Date(validatedData.startDate) : undefined,
@@ -79,7 +87,7 @@ export async function PATCH(
 
     return NextResponse.json(project)
   } catch (error: any) {
-    console.error("Error updating project:", error)
+    console.error("Error en PATCH /api/projects/[id]:", error)
 
     if (error.code === "P2025") {
       return NextResponse.json(
@@ -96,7 +104,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(
-      { error: "Error al actualizar proyecto" },
+      { error: "Error al actualizar proyecto", message: error.message },
       { status: 500 }
     )
   }
@@ -105,13 +113,14 @@ export async function PATCH(
 // PUT /api/projects/[id] - Actualizar proyecto completo
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
 
     const project = await prisma.project.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...body,
         startDate: body.startDate ? new Date(body.startDate) : null,
@@ -121,7 +130,7 @@ export async function PUT(
 
     return NextResponse.json(project)
   } catch (error: any) {
-    console.error("Error updating project:", error)
+    console.error("Error en PUT /api/projects/[id]:", error)
 
     if (error.code === "P2025") {
       return NextResponse.json(
@@ -131,7 +140,7 @@ export async function PUT(
     }
 
     return NextResponse.json(
-      { error: "Error al actualizar proyecto" },
+      { error: "Error al actualizar proyecto", message: error.message },
       { status: 500 }
     )
   }
@@ -140,16 +149,17 @@ export async function PUT(
 // DELETE /api/projects/[id] - Eliminar proyecto
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await prisma.project.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: "Proyecto eliminado" })
   } catch (error: any) {
-    console.error("Error deleting project:", error)
+    console.error("Error en DELETE /api/projects/[id]:", error)
 
     if (error.code === "P2025") {
       return NextResponse.json(
@@ -159,7 +169,7 @@ export async function DELETE(
     }
 
     return NextResponse.json(
-      { error: "Error al eliminar proyecto" },
+      { error: "Error al eliminar proyecto", message: error.message },
       { status: 500 }
     )
   }

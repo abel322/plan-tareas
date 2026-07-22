@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import {
   ArrowLeft,
   Calendar,
@@ -21,7 +20,8 @@ import Link from "next/link"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { EditTaskDialog } from "@/components/tasks/edit-task-dialog"
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<any>(null)
@@ -29,31 +29,30 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchProjectData = async () => {
-      try {
-        // Fetch project details
-        const projectRes = await fetch(`/api/projects/${params.id}`)
-        if (projectRes.ok) {
-          const projectData = await projectRes.json()
-          setProject(projectData)
-        }
-
-        // Fetch tasks for this project
-        const tasksRes = await fetch(`/api/tasks?projectId=${params.id}`)
-        if (tasksRes.ok) {
-          const tasksData = await tasksRes.json()
-          setTasks(tasksData)
-        }
-      } catch (error) {
-        console.error("Error fetching project data:", error)
-      } finally {
-        setLoading(false)
+  const fetchProjectData = async () => {
+    try {
+      // Fetch project details
+      const projectRes = await fetch(`/api/projects/${id}`)
+      if (projectRes.ok) {
+        const projectData = await projectRes.json()
+        setProject(projectData)
+        setTasks(projectData?.tasks || [])
+      } else {
+        setProject(null)
       }
+    } catch (error) {
+      console.error("Error fetching project data:", error)
+      setProject(null)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    fetchProjectData()
-  }, [params.id])
+  useEffect(() => {
+    if (id) {
+      fetchProjectData()
+    }
+  }, [id])
 
   const handleEditTask = (task: any, e: React.MouseEvent) => {
     e.preventDefault()
@@ -73,7 +72,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         })
         
         if (res.ok) {
-          setTasks(tasks.filter(t => t.id !== task.id)) // Remove from state
+          setTasks((prev) => prev.filter(t => t.id !== task.id))
         } else {
           alert('Error al eliminar la tarea')
         }
@@ -98,7 +97,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       })
       
       if (res.ok) {
-        setTasks(tasks.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
+        setTasks((prev) => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t))
       } else {
         alert('Error al actualizar la tarea')
       }
@@ -110,8 +109,62 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-ink-secondary">Cargando...</p>
+      <div className="space-y-6 animate-pulse">
+        {/* Breadcrumb skeleton */}
+        <div className="h-9 w-32 bg-surface rounded-lg" />
+        
+        {/* Header skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="space-y-3 flex-1">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-64 bg-surface rounded-lg" />
+              <div className="h-6 w-16 bg-surface rounded" />
+              <div className="h-6 w-20 bg-surface rounded" />
+            </div>
+            <div className="h-4 w-full max-w-xl bg-surface rounded" />
+          </div>
+          <div className="h-10 w-32 bg-surface rounded-lg shrink-0" />
+        </div>
+
+        {/* Stats Grid skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="border-border/30 bg-surface/20">
+              <CardContent className="pt-6">
+                <div className="h-4 w-24 bg-surface rounded mb-2" />
+                <div className="h-8 w-16 bg-surface rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Content skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card className="border-border/30 bg-surface/20">
+              <CardHeader>
+                <div className="h-6 w-48 bg-surface rounded" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-14 bg-surface rounded-lg" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+          <div>
+            <Card className="border-border/30 bg-surface/20">
+              <CardHeader>
+                <div className="h-5 w-32 bg-surface rounded" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-10 bg-surface rounded" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     )
   }
@@ -125,9 +178,15 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             Volver a Proyectos
           </Button>
         </Link>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-ink-secondary">Proyecto no encontrado</p>
+        <Card className="border-border/30">
+          <CardContent className="py-12 text-center space-y-4">
+            <AlertCircle className="w-12 h-12 text-critical mx-auto" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-ink-primary">Proyecto no encontrado</h3>
+              <p className="text-sm text-ink-secondary">
+                El proyecto que intentas ver no existe o no tienes permisos para acceder a él.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -171,7 +230,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       <CreateTaskDialog
         open={createTaskDialogOpen}
         onOpenChange={setCreateTaskDialogOpen}
-        projectId={params.id}
+        projectId={id}
         onTaskCreated={fetchProjectData}
       />
 
@@ -401,21 +460,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         task={editingTask}
-        onTaskUpdated={() => {
-          // Refresh tasks
-          const fetchTasks = async () => {
-            try {
-              const tasksRes = await fetch(`/api/tasks?projectId=${params.id}`)
-              if (tasksRes.ok) {
-                const tasksData = await tasksRes.json()
-                setTasks(tasksData)
-              }
-            } catch (error) {
-              console.error("Error fetching tasks:", error)
-            }
-          }
-          fetchTasks()
-        }}
+        onTaskUpdated={fetchProjectData}
       />
     </div>
   )
