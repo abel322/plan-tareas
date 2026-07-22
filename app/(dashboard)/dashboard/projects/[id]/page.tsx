@@ -325,36 +325,38 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className={`group relative flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                      className={`group relative flex items-center justify-between gap-4 p-4 rounded-lg border transition-all ${
                         task.isCritical
-                          ? "border-intelligence/40 critical-path-glow"
-                          : "border-graphite/40 hover:border-graphite/60"
+                          ? "border-intelligence/50 bg-intelligence/5 critical-path-glow"
+                          : "border-border/40 bg-surface/10 hover:bg-surface/30 hover:border-border/60"
                       }`}
                     >
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all ${
-                          task.status === "COMPLETED"
-                            ? "bg-success border-success"
-                            : "border-graphite hover:border-electric-cyan"
-                        }`}
-                        onClick={(e) => handleToggleTaskStatus(task, e)}
-                      >
-                        {task.status === "COMPLETED" && (
-                          <CheckCircle2 className="w-3 h-3 text-midnight" />
-                        )}
-                      </div>
-                      <div className="flex-1 pr-4">
-                        <p
-                          className={`font-medium ${
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all ${
                             task.status === "COMPLETED"
-                              ? "text-ink-tertiary line-through"
-                              : "text-ink-primary"
+                              ? "bg-success border-success text-midnight"
+                              : "border-text-secondary hover:border-electric-cyan"
                           }`}
+                          onClick={(e) => handleToggleTaskStatus(task, e)}
                         >
-                          {task.name}
-                        </p>
+                          {task.status === "COMPLETED" && (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-midnight stroke-[3]" />
+                          )}
+                        </div>
+                        <div className="flex-1 pr-4 min-w-0">
+                          <p
+                            className={`font-semibold text-sm tracking-wide transition-all ${
+                              task.status === "COMPLETED"
+                                ? "text-text-muted line-through opacity-70"
+                                : "text-text-primary"
+                            }`}
+                          >
+                            {task.name}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         {task.isCritical && (
                           <Badge variant="intelligence" className="text-xs">
                             Crítica
@@ -368,26 +370,26 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                               ? "warning"
                               : "default"
                           }
-                          className="text-xs"
+                          className="text-xs font-semibold"
                         >
                           {task.priority}
                         </Badge>
-                        <div className="flex gap-1 ml-2">
+                        <div className="flex gap-1.5 ml-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-7 w-7 p-0 border-graphite/40 hover:border-electric-cyan/60 hover:bg-electric-cyan/10"
+                            className="h-8 w-8 p-0 border-border/60 hover:border-electric-cyan hover:bg-electric-cyan/20 transition-all"
                             onClick={(e) => handleEditTask(task, e)}
                           >
-                            <Edit3 className="w-3 h-3 text-electric-cyan" />
+                            <Edit3 className="w-4 h-4 text-electric-cyan" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-7 w-7 p-0 border-graphite/40 hover:border-critical/60 hover:bg-critical/10"
+                            className="h-8 w-8 p-0 border-border/60 hover:border-critical hover:bg-critical/20 transition-all"
                             onClick={(e) => handleDeleteTask(task, e)}
                           >
-                            <Trash2 className="w-3 h-3 text-critical" />
+                            <Trash2 className="w-4 h-4 text-critical" />
                           </Button>
                         </div>
                       </div>
@@ -406,12 +408,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             <CardHeader>
               <CardTitle className="text-base">Información del Proyecto</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               {project.startDate && (
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm border-b border-border/20 pb-3">
                   <Calendar className="w-4 h-4 text-ink-tertiary" />
                   <div>
-                    <p className="text-ink-tertiary">Inicio</p>
+                    <p className="text-ink-tertiary text-xs">Inicio</p>
                     <p className="text-ink-primary font-medium">
                       {new Date(project.startDate).toLocaleDateString('es-ES')}
                     </p>
@@ -419,10 +421,10 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 </div>
               )}
               {project.endDate && (
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm border-b border-border/20 pb-3">
                   <Calendar className="w-4 h-4 text-ink-tertiary" />
                   <div>
-                    <p className="text-ink-tertiary">Fin Estimado</p>
+                    <p className="text-ink-tertiary text-xs">Fin Estimado</p>
                     <p className="text-ink-primary font-medium">
                       {new Date(project.endDate).toLocaleDateString('es-ES')}
                     </p>
@@ -432,8 +434,10 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               <div className="flex items-center gap-3 text-sm">
                 <Users className="w-4 h-4 text-ink-tertiary" />
                 <div>
-                  <p className="text-ink-tertiary">Tareas</p>
-                  <p className="text-ink-primary font-medium">{tasks.length} tareas</p>
+                  <p className="text-ink-tertiary text-xs">Tareas</p>
+                  <p className="text-ink-primary font-medium">
+                    {tasks.length} {tasks.length === 1 ? "tarea" : "tareas"}
+                  </p>
                 </div>
               </div>
             </CardContent>
