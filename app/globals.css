@@ -129,3 +129,29 @@
   background: #06b6d4; /* Cian neón al pasar el mouse */
 }
 
+/* Aplicar a contenedores internos del Gantt */
+.gantt-container *::-webkit-scrollbar,
+._3zR25::-webkit-scrollbar,
+div[class*="gantt"]::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.gantt-container *::-webkit-scrollbar-track,
+div[class*="gantt"]::-webkit-scrollbar-track {
+  background: #0f172a !important;
+  border-radius: 4px !important;
+}
+
+.gantt-container *::-webkit-scrollbar-thumb,
+div[class*="gantt"]::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+  border-radius: 4px !important;
+}
+
+.gantt-container *::-webkit-scrollbar-thumb:hover,
+div[class*="gantt"]::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4 !important;
+}
+
+

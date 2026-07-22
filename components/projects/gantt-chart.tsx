@@ -321,12 +321,29 @@ export function GanttChart({ tasks, projectStartDate, projectEndDate }: GanttCha
 
       {/* Estilos CSS globales avanzados de visualización neón en SVG */}
       <style jsx global>{`
-        /* Ocultar scrollbars por defecto del Gantt interno para no duplicar */
-        .gantt-container-neon-v3 div[class*="scroll"] {
-          scrollbar-width: none;
+        /* Aplicar a contenedores internos del Gantt */
+        .gantt-container-neon-v3 *::-webkit-scrollbar,
+        ._3zR25::-webkit-scrollbar,
+        div[class*="gantt"]::-webkit-scrollbar {
+          width: 6px !important;
+          height: 6px !important;
         }
-        .gantt-container-neon-v3 div[class*="scroll"]::-webkit-scrollbar {
-          display: none;
+
+        .gantt-container-neon-v3 *::-webkit-scrollbar-track,
+        div[class*="gantt"]::-webkit-scrollbar-track {
+          background: #0f172a !important;
+          border-radius: 4px !important;
+        }
+
+        .gantt-container-neon-v3 *::-webkit-scrollbar-thumb,
+        div[class*="gantt"]::-webkit-scrollbar-thumb {
+          background: #334155 !important;
+          border-radius: 4px !important;
+        }
+
+        .gantt-container-neon-v3 *::-webkit-scrollbar-thumb:hover,
+        div[class*="gantt"]::-webkit-scrollbar-thumb:hover {
+          background: #06b6d4 !important;
         }
 
         .gantt-container-neon-v3 svg {
