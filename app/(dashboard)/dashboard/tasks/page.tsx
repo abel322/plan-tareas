@@ -141,18 +141,17 @@ export default function GoalsPage() {
             Estructura los objetivos y asóciales tareas secuenciales para tu proyecto
           </p>
         </div>
-        <div className="relative group">
+        <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
           <Button
-            className="gap-2 shrink-0 self-start sm:self-auto bg-electric-cyan text-midnight font-bold hover:bg-electric-cyan/95 shadow-lg shadow-electric-cyan/20"
+            className="gap-2 bg-electric-cyan text-midnight font-bold hover:bg-electric-cyan/95 shadow-lg shadow-electric-cyan/20 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => setCreateGoalOpen(true)}
             disabled={projectFilter === "ALL"}
-            title={projectFilter === "ALL" ? "Selecciona un Proyecto primero" : "Nuevo Objetivo"}
           >
             <Plus className="w-4 h-4" />
             Nuevo Objetivo Específico
           </Button>
           {projectFilter === "ALL" && (
-            <p className="text-[11px] text-amber-500 mt-1 font-semibold">
+            <p className="text-[11px] text-amber-500 font-semibold max-w-[240px] text-left sm:text-right leading-tight break-words">
               * Selecciona un Proyecto específico para agregar objetivos.
             </p>
           )}
@@ -339,23 +338,23 @@ export default function GoalsPage() {
                       </div>
                     </div>
 
-                    {/* Goal Progress bar */}
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-semibold text-ink-tertiary">
-                        <span>Progreso de Tareas ({completedTasks}/{totalTasks})</span>
-                        <span className="text-electric-cyan">{progressPercent}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-surface/30 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-electric-cyan transition-all duration-300"
-                          style={{ width: `${progressPercent}%` }}
-                        />
-                      </div>
-                    </div>
-
                     {/* Expanded Task list */}
                     {isExpanded && (
-                      <div className="pt-4 border-t border-border/20 space-y-3">
+                      <div className="pt-4 border-t border-border/20 space-y-4">
+                        {/* Goal Progress bar inside collapse */}
+                        <div className="space-y-1.5 p-3 rounded-lg bg-surface/5 border border-border/10">
+                          <div className="flex justify-between text-xs font-semibold text-ink-tertiary">
+                            <span>Progreso de Tareas Vinculadas ({completedTasks}/{totalTasks})</span>
+                            <span className="text-electric-cyan">{progressPercent}%</span>
+                          </div>
+                          <div className="w-full h-2 bg-surface/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-electric-cyan transition-all duration-300"
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                        </div>
+
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-bold text-ink-primary">Tareas Asociadas</h4>
                           <Button
@@ -367,7 +366,7 @@ export default function GoalsPage() {
                             className="gap-1.5 bg-electric-cyan/10 hover:bg-electric-cyan/20 text-electric-cyan border border-electric-cyan/30 font-semibold"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            Agregar Tarea a este Objetivo
+                            Agregar Tarea
                           </Button>
                         </div>
 
