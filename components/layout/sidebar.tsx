@@ -13,13 +13,14 @@ import {
   Network,
   X,
   LogOut,
+  Target,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Proyectos", href: "/dashboard/projects", icon: FolderKanban },
-  { name: "Tareas", href: "/dashboard/tasks", icon: CheckSquare },
+  { name: "Objetivos Específicos", href: "/dashboard/tasks", icon: Target },
   { name: "Análisis PERT/CPM", href: "/dashboard/analysis", icon: Network },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Configuración", href: "/dashboard/settings", icon: Settings },

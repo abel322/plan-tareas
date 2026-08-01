@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
     const projectId = searchParams.get("projectId")
 
     const where: any = {}
-    if (projectId) where.projectId = projectId
+    if (projectId) {
+      where.projectId = projectId
+    }
+    where.project = {
+      userId: session.user.id
+    }
 
     const goals = await prisma.specificGoal.findMany({
       where,
@@ -43,6 +48,8 @@ export async function GET(request: NextRequest) {
             priority: true,
             isCritical: true,
             estimatedDuration: true,
+            startDate: true,
+            endDate: true,
           },
         },
       },

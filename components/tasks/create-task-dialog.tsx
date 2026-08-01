@@ -20,6 +20,7 @@ interface CreateTaskDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   projectId?: string
+  specificGoalId?: string
   onTaskCreated?: () => void
 }
 
@@ -27,6 +28,7 @@ export function CreateTaskDialog({
   open,
   onOpenChange,
   projectId,
+  specificGoalId,
   onTaskCreated,
 }: CreateTaskDialogProps) {
   const router = useRouter()
@@ -60,6 +62,13 @@ export function CreateTaskDialog({
       setFormData((prev) => ({ ...prev, selectedProjectId: projectId }))
     }
   }, [projectId])
+
+  // Sincronizar specificGoalId por prop si cambia
+  useEffect(() => {
+    if (specificGoalId) {
+      setFormData((prev) => ({ ...prev, specificGoalId: specificGoalId }))
+    }
+  }, [specificGoalId])
 
   // Cargar lista de proyectos si no hay projectId prop
   useEffect(() => {
