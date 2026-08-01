@@ -21,7 +21,10 @@ export const createTaskSchema = z.object({
   status: z.string().default("TODO"),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  estimatedDuration: z.number().positive().optional(),
+  estimatedDuration: z.number().min(0).optional(),
+  optimisticTime: z.number().min(0).optional().nullable(),
+  mostLikelyTime: z.number().min(0).optional().nullable(),
+  pessimisticTime: z.number().min(0).optional().nullable(),
   tags: z.string().optional(),
   dependsOnId: z.string().optional(),
 })

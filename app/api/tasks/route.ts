@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
     const task = await prisma.task.create({
       data: {
         ...dataToCreate,
+        estimatedDuration: dataToCreate.estimatedDuration ?? 0,
         startDate: dataToCreate.startDate ? new Date(dataToCreate.startDate) : null,
         endDate: dataToCreate.endDate ? new Date(dataToCreate.endDate) : null,
       },

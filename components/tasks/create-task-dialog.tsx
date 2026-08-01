@@ -34,6 +34,7 @@ export function CreateTaskDialog({
   const [projectTasks, setProjectTasks] = useState<any[]>([])
   const [loadingProjects, setLoadingProjects] = useState(false)
 
+  const [estimationMethod, setEstimationMethod] = useState<"CPM" | "PERT">("CPM")
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -43,6 +44,9 @@ export function CreateTaskDialog({
     startDate: "",
     endDate: "",
     estimatedDuration: "",
+    optimisticTime: "",
+    mostLikelyTime: "",
+    pessimisticTime: "",
     dependsOnId: "",
   })
 
@@ -98,6 +102,17 @@ export function CreateTaskDialog({
     }
   }, [open, projectId, formData.selectedProjectId])
 
+  // Cálculo en tiempo real de Te PERT: Te = (O + 4*M + P) / 6
+  const calculatedTe = (() => {
+    const o = parseFloat(formData.optimisticTime)
+    const m = parseFloat(formData.mostLikelyTime)
+    const p = parseFloat(formData.pessimisticTime)
+    if (!isNaN(o) && !isNaN(m) && !isNaN(p)) {
+      return Math.round(((o + 4 * m + p) / 6) * 100) / 100
+    }
+    return null
+  })()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const targetProjectId = projectId || formData.selectedProjectId
@@ -105,6 +120,35 @@ export function CreateTaskDialog({
     if (!targetProjectId) {
       alert("Por favor selecciona un proyecto")
       return
+    }
+
+    let finalEstimatedDuration: number | undefined
+    let optimisticTime: number | undefined
+    let mostLikelyTime: number | undefined
+    let pessimisticTime: number | undefined
+
+    if (estimationMethod === "CPM") {
+      if (!formData.estimatedDuration) {
+        alert("Por favor ingresa la duración estimada para CPM")
+        return
+      }
+      finalEstimatedDuration = parseFloat(formData.estimatedDuration)
+    } else {
+      if (calculatedTe === null) {
+        alert("Por favor completa los 3 tiempos de PERT (Optimista, Más Probable, Pesimista)")
+        return
+      }
+      const o = parseFloat(formData.optimisticTime)
+      const m = parseFloat(formData.mostLikelyTime)
+      const p = parseFloat(formData.pessimisticTime)
+      if (o > m || m > p) {
+        alert("En la estimación PERT debe cumplirse: Optimista ≤ Más Probable ≤ Pesimista")
+        return
+      }
+      optimisticTime = o
+      mostLikelyTime = m
+      pessimisticTime = p
+      finalEstimatedDuration = calculatedTe
     }
 
     setLoading(true)
@@ -118,9 +162,10 @@ export function CreateTaskDialog({
         status: formData.status,
         startDate: formData.startDate || undefined,
         endDate: formData.endDate || undefined,
-        estimatedDuration: formData.estimatedDuration
-          ? parseFloat(formData.estimatedDuration)
-          : undefined,
+        estimatedDuration: finalEstimatedDuration,
+        optimisticTime,
+        mostLikelyTime,
+        pessimisticTime,
         dependsOnId: formData.dependsOnId || undefined,
       }
 
@@ -150,8 +195,12 @@ export function CreateTaskDialog({
         startDate: "",
         endDate: "",
         estimatedDuration: "",
+        optimisticTime: "",
+        mostLikelyTime: "",
+        pessimisticTime: "",
         dependsOnId: "",
       })
+      setEstimationMethod("CPM")
     } catch (error: any) {
       console.error("Error:", error)
       alert(error.message || "Error al crear tarea")
@@ -166,7 +215,7 @@ export function CreateTaskDialog({
         <DialogHeader>
           <DialogTitle>Crear Nueva Tarea</DialogTitle>
           <DialogDescription>
-            Agrega una nueva tarea y vincúlala a un proyecto
+            Agrega una nueva tarea con estimación CPM o PERT y vincúlala a un proyecto
           </DialogDescription>
         </DialogHeader>
 
@@ -190,9 +239,9 @@ export function CreateTaskDialog({
             <div className="space-y-2">
               <Label htmlFor="selectedProjectId">Proyecto *</Label>
               {loadingProjects ? (
-                <p className="text-xs text-ink-tertiary">Cargando proyectos...</p>
+                <p className="text-xs text-muted-foreground">Cargando proyectos...</p>
               ) : projects.length === 0 ? (
-                <p className="text-xs text-critical">
+                <p className="text-xs text-destructive">
                   No tienes proyectos creados. Crea un proyecto primero.
                 </p>
               ) : (
@@ -264,40 +313,132 @@ export function CreateTaskDialog({
             </div>
           </div>
 
-          {/* Duración Estimada y Predecesora (PERT/CPM) */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="estimatedDuration">Duración Estimada (días)</Label>
-              <Input
-                id="estimatedDuration"
-                type="number"
-                step="0.5"
-                min="0"
-                value={formData.estimatedDuration}
-                onChange={(e) =>
-                  setFormData({ ...formData, estimatedDuration: e.target.value })
-                }
-                placeholder="Ej: 3.5"
-              />
+          {/* Selector de Metodología de Estimación de Tiempo (CPM / PERT) */}
+          <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <Label className="font-semibold text-sm">Metodología de Estimación</Label>
+              <div className="flex bg-muted p-1 rounded-lg self-start sm:self-auto border">
+                <button
+                  type="button"
+                  onClick={() => setEstimationMethod("CPM")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    estimationMethod === "CPM"
+                      ? "bg-background text-foreground shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  CPM (Tiempo Fijo)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEstimationMethod("PERT")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    estimationMethod === "PERT"
+                      ? "bg-background text-foreground shadow-sm font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  PERT (3 Tiempos)
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dependsOnId">Tarea Predecesora (PERT/CPM)</Label>
-              <Select
-                id="dependsOnId"
-                value={formData.dependsOnId}
-                onChange={(e) =>
-                  setFormData({ ...formData, dependsOnId: e.target.value })
-                }
-              >
-                <option value="">Ninguna</option>
-                {projectTasks.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {estimationMethod === "CPM" ? (
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="estimatedDuration">Duración Estimada (días) *</Label>
+                <Input
+                  id="estimatedDuration"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={formData.estimatedDuration}
+                  onChange={(e) =>
+                    setFormData({ ...formData, estimatedDuration: e.target.value })
+                  }
+                  placeholder="Ej: 3.5"
+                  required={estimationMethod === "CPM"}
+                />
+              </div>
+            ) : (
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="optimisticTime" className="text-xs">Optimista (O) *</Label>
+                    <Input
+                      id="optimisticTime"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={formData.optimisticTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, optimisticTime: e.target.value })
+                      }
+                      placeholder="Ej: 2"
+                      required={estimationMethod === "PERT"}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="mostLikelyTime" className="text-xs">Más Probable (M) *</Label>
+                    <Input
+                      id="mostLikelyTime"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={formData.mostLikelyTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, mostLikelyTime: e.target.value })
+                      }
+                      placeholder="Ej: 4"
+                      required={estimationMethod === "PERT"}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="pessimisticTime" className="text-xs">Pesimista (P) *</Label>
+                    <Input
+                      id="pessimisticTime"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={formData.pessimisticTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, pessimisticTime: e.target.value })
+                      }
+                      placeholder="Ej: 8"
+                      required={estimationMethod === "PERT"}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 rounded-md bg-primary/10 border border-primary/20">
+                  <span className="text-xs font-medium text-primary">Duración Calculada (Te):</span>
+                  <span className="text-sm font-bold text-primary">
+                    {calculatedTe !== null ? `${calculatedTe} días` : "--"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground italic">
+                  Fórmula PERT: Te = (O + 4×M + P) / 6
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Tarea Predecesora (PERT/CPM) */}
+          <div className="space-y-2">
+            <Label htmlFor="dependsOnId">Tarea Predecesora (Dependencia)</Label>
+            <Select
+              id="dependsOnId"
+              value={formData.dependsOnId}
+              onChange={(e) =>
+                setFormData({ ...formData, dependsOnId: e.target.value })
+              }
+            >
+              <option value="">Ninguna</option>
+              {projectTasks.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Fechas Inicio y Fin */}

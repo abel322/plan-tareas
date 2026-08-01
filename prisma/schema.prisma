@@ -65,7 +65,11 @@ model Task {
   status            String           @default("TODO")
   startDate         DateTime?
   endDate           DateTime?
-  estimatedDuration Float?
+  estimatedDuration Float            @default(0)
+  // Campos PERT (Program Evaluation and Review Technique)
+  optimisticTime    Float?
+  mostLikelyTime    Float?
+  pessimisticTime   Float?
   tags              String?
   // Campos CPM (Critical Path Method)
   earlyStart        Float?           // ES: Tiempo de inicio temprano

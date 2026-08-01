@@ -110,12 +110,14 @@ export async function PUT(
   try {
     const body = await request.json()
 
+    const { dependsOnId, estimationMethod, ...dataToUpdate } = body
+
     const task = await prisma.task.update({
       where: { id: params.id },
       data: {
-        ...body,
-        startDate: body.startDate ? new Date(body.startDate) : null,
-        endDate: body.endDate ? new Date(body.endDate) : null,
+        ...dataToUpdate,
+        startDate: dataToUpdate.startDate ? new Date(dataToUpdate.startDate) : null,
+        endDate: dataToUpdate.endDate ? new Date(dataToUpdate.endDate) : null,
       },
       include: {
         assignee: {

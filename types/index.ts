@@ -27,7 +27,10 @@ export interface Task {
   status: TaskStatus
   startDate?: Date | null
   endDate?: Date | null
-  estimatedDuration?: number | null
+  estimatedDuration: number
+  optimisticTime?: number | null
+  mostLikelyTime?: number | null
+  pessimisticTime?: number | null
   tags: string[]
   isCritical: boolean
   createdAt: Date
@@ -54,5 +57,8 @@ export interface CreateTaskInput {
   startDate?: Date
   endDate?: Date
   estimatedDuration?: number
+  optimisticTime?: number
+  mostLikelyTime?: number
+  pessimisticTime?: number
   tags?: string[]
 }
