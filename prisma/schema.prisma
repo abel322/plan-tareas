@@ -8,18 +8,33 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String    @default("USER")
-  projects      Project[]
-  tasks         Task[]
-  activityLogs  ActivityLog[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                 String        @id @default(cuid())
+  name               String?
+  email              String        @unique
+  emailVerified      DateTime?
+  image              String?
+  password           String?
+  role               String        @default("USER")
+  isTwoFactorEnabled Boolean       @default(false)
+  twoFactorSecret    String?
+  projects           Project[]
+  tasks              Task[]
+  activityLogs       ActivityLog[]
+  userSessions       UserSession[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model UserSession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent   String?
+  ipAddress   String?
+  isCurrent   Boolean  @default(false)
+  lastActive  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Project {

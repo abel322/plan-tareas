@@ -80,3 +80,25 @@ export interface CreateTaskInput {
   pessimisticTime?: number
   tags?: string[]
 }
+
+export interface User {
+  id: string
+  name?: string | null
+  email: string
+  image?: string | null
+  role: Role
+  isTwoFactorEnabled: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface UserSession {
+  id: string
+  userId: string
+  userAgent?: string | null
+  ipAddress?: string | null
+  isCurrent: boolean
+  lastActive: Date
+  createdAt: Date
+  updatedAt: Date
+}

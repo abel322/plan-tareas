@@ -21,6 +21,10 @@ import {
   Key,
 } from "lucide-react"
 
+import { ChangePasswordDialog } from "@/components/settings/change-password-dialog"
+import { TwoFactorDialog } from "@/components/settings/two-factor-dialog"
+import { ActiveSessionsDialog } from "@/components/settings/active-sessions-dialog"
+
 type SettingsSection = "profile" | "notifications" | "appearance" | "security" | "data"
 
 export default function SettingsPage() {
@@ -28,6 +32,9 @@ export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false)
+  const [twoFactorDialogOpen, setTwoFactorDialogOpen] = useState(false)
+  const [activeSessionsDialogOpen, setActiveSessionsDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -44,40 +51,42 @@ export default function SettingsPage() {
     dateFormat: "dd/mm/yyyy",
   })
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        // Get first user (demo user)
-        const res = await fetch('/api/projects')
-        if (res.ok) {
-          // For now, use demo data since we don't have a users API
-          setUser({
-            id: "1",
-            name: "Usuario Demo",
-            email: "demo@projectflow.com",
-            role: "ADMIN"
-          })
-          setFormData({
-            name: "Usuario Demo",
-            email: "demo@projectflow.com"
-          })
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error)
-      } finally {
-        setLoading(false)
+  const fetchUser = async () => {
+    try {
+      const res = await fetch("/api/user/profile")
+      if (res.ok) {
+        const userData = await res.json()
+        setUser(userData)
+        setFormData({
+          name: userData.name || "",
+          email: userData.email || "",
+        })
       }
+    } catch (error) {
+      console.error("Error fetching user:", error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchUser()
   }, [])
 
   const handleSaveProfile = async () => {
     setSaving(true)
     try {
-      // TODO: Implement user update API
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Mock delay
-      alert("Perfil actualizado correctamente")
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      if (res.ok) {
+        alert("Perfil actualizado correctamente")
+        fetchUser()
+      } else {
+        alert("Error al actualizar perfil")
+      }
     } catch (error) {
       alert("Error al actualizar perfil")
     } finally {
@@ -343,7 +352,11 @@ export default function SettingsPage() {
                         <p className="font-medium text-ink-primary">Cambiar Contraseña</p>
                         <p className="text-sm text-ink-tertiary">Actualiza tu contraseña regularmente</p>
                       </div>
-                      <Button variant="outline" className="gap-2">
+                      <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => setChangePasswordDialogOpen(true)}
+                      >
                         <Key className="w-4 h-4" />
                         Cambiar
                       </Button>
@@ -353,13 +366,21 @@ export default function SettingsPage() {
                   <div className="p-4 rounded-lg bg-slate-mid">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-ink-primary">Autenticación de Dos Factores</p>
-                        <p className="text-sm text-ink-tertiary">Añade una capa extra de seguridad</p>
+                        <p className="font-medium text-ink-primary">Autenticación de Dos Factores (2FA)</p>
+                        <p className="text-sm text-ink-tertiary">Añade una capa extra de seguridad a tu cuenta</p>
                       </div>
-                      <Badge variant="warning">Desactivado</Badge>
+                      {user?.isTwoFactorEnabled ? (
+                        <Badge variant="intelligence">Activado</Badge>
+                      ) : (
+                        <Badge variant="warning">Desactivado</Badge>
+                      )}
                     </div>
-                    <Button variant="outline" className="mt-3">
-                      Activar 2FA
+                    <Button
+                      variant="outline"
+                      className="mt-3"
+                      onClick={() => setTwoFactorDialogOpen(true)}
+                    >
+                      {user?.isTwoFactorEnabled ? "Gestionar 2FA" : "Activar 2FA"}
                     </Button>
                   </div>
 
@@ -367,9 +388,12 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-ink-primary">Sesiones Activas</p>
-                        <p className="text-sm text-ink-tertiary">Gestiona tus sesiones activas</p>
+                        <p className="text-sm text-ink-tertiary">Gestiona tus dispositivos y sesiones activas</p>
                       </div>
-                      <Button variant="outline">
+                      <Button
+                        variant="outline"
+                        onClick={() => setActiveSessionsDialogOpen(true)}
+                      >
                         Ver Sesiones
                       </Button>
                     </div>
@@ -437,6 +461,26 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <ChangePasswordDialog
+        open={changePasswordDialogOpen}
+        onOpenChange={setChangePasswordDialogOpen}
+      />
+
+      <TwoFactorDialog
+        open={twoFactorDialogOpen}
+        onOpenChange={setTwoFactorDialogOpen}
+        isEnabled={!!user?.isTwoFactorEnabled}
+        onStatusChange={(enabled) => {
+          setUser((prev: any) => ({ ...prev, isTwoFactorEnabled: enabled }))
+          fetchUser()
+        }}
+      />
+
+      <ActiveSessionsDialog
+        open={activeSessionsDialogOpen}
+        onOpenChange={setActiveSessionsDialogOpen}
+      />
     </div>
   )
 }
