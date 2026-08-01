@@ -19,6 +19,7 @@ export async function GET(
           },
         },
         project: true,
+        specificGoal: true,
         pertEstimation: true,
         dependencies: {
           include: {

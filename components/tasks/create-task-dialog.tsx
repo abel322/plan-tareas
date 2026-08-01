@@ -33,12 +33,14 @@ export function CreateTaskDialog({
   const [projects, setProjects] = useState<any[]>([])
   const [projectTasks, setProjectTasks] = useState<any[]>([])
   const [loadingProjects, setLoadingProjects] = useState(false)
-
+  const [specificGoals, setSpecificGoals] = useState<any[]>([])
+  const [loadingSpecificGoals, setLoadingSpecificGoals] = useState(false)
   const [estimationMethod, setEstimationMethod] = useState<"CPM" | "PERT">("CPM")
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     selectedProjectId: projectId || "",
+    specificGoalId: "",
     priority: "MEDIUM",
     status: "TODO",
     startDate: "",
@@ -82,23 +84,35 @@ export function CreateTaskDialog({
     }
   }, [open, projectId])
 
-  // Cargar tareas del proyecto seleccionado para dependencias
+  // Cargar tareas y Objetivos Específicos del proyecto seleccionado
   useEffect(() => {
     const targetProjectId = projectId || formData.selectedProjectId
     if (open && targetProjectId) {
-      const fetchProjectTasks = async () => {
+      const fetchProjectDetails = async () => {
+        setLoadingSpecificGoals(true)
         try {
-          const res = await fetch(`/api/tasks?projectId=${targetProjectId}`)
-          if (res.ok) {
-            const data = await res.json()
-            setProjectTasks(data)
+          const [tasksRes, goalsRes] = await Promise.all([
+            fetch(`/api/tasks?projectId=${targetProjectId}`),
+            fetch(`/api/specific-goals?projectId=${targetProjectId}`),
+          ])
+
+          if (tasksRes.ok) {
+            const tasksData = await tasksRes.json()
+            setProjectTasks(tasksData)
+          }
+
+          if (goalsRes.ok) {
+            const goalsData = await goalsRes.json()
+            setSpecificGoals(goalsData)
           }
         } catch (error) {
-          console.error("Error al cargar tareas del proyecto:", error)
+          console.error("Error al cargar datos del proyecto:", error)
+        } finally {
+          setLoadingSpecificGoals(false)
         }
       }
 
-      fetchProjectTasks()
+      fetchProjectDetails()
     }
   }, [open, projectId, formData.selectedProjectId])
 
@@ -158,6 +172,7 @@ export function CreateTaskDialog({
         name: formData.name,
         description: formData.description || undefined,
         projectId: targetProjectId,
+        specificGoalId: formData.specificGoalId || undefined,
         priority: formData.priority,
         status: formData.status,
         startDate: formData.startDate || undefined,
@@ -190,6 +205,7 @@ export function CreateTaskDialog({
         name: "",
         description: "",
         selectedProjectId: projectId || (projects[0]?.id || ""),
+        specificGoalId: "",
         priority: "MEDIUM",
         status: "TODO",
         startDate: "",
@@ -249,7 +265,7 @@ export function CreateTaskDialog({
                   id="selectedProjectId"
                   value={formData.selectedProjectId}
                   onChange={(e) =>
-                    setFormData({ ...formData, selectedProjectId: e.target.value, dependsOnId: "" })
+                    setFormData({ ...formData, selectedProjectId: e.target.value, specificGoalId: "", dependsOnId: "" })
                   }
                   required
                 >
@@ -262,6 +278,29 @@ export function CreateTaskDialog({
               )}
             </div>
           )}
+
+          {/* Selección de Objetivo Específico */}
+          <div className="space-y-2">
+            <Label htmlFor="specificGoalId">Objetivo Específico (Opcional)</Label>
+            {loadingSpecificGoals ? (
+              <p className="text-xs text-muted-foreground">Cargando objetivos específicos...</p>
+            ) : (
+              <Select
+                id="specificGoalId"
+                value={formData.specificGoalId}
+                onChange={(e) =>
+                  setFormData({ ...formData, specificGoalId: e.target.value })
+                }
+              >
+                <option value="">Ninguno (Sin asignar)</option>
+                {specificGoals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </div>
 
           {/* Descripción */}
           <div className="space-y-2">

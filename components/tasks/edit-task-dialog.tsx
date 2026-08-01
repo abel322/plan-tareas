@@ -28,10 +28,13 @@ export function EditTaskDialog({
   onTaskUpdated,
 }: EditTaskDialogProps) {
   const [loading, setLoading] = useState(false)
+  const [specificGoals, setSpecificGoals] = useState<any[]>([])
+  const [loadingSpecificGoals, setLoadingSpecificGoals] = useState(false)
   const [estimationMethod, setEstimationMethod] = useState<"CPM" | "PERT">("CPM")
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    specificGoalId: "",
     priority: "MEDIUM",
     status: "TODO",
     estimatedDuration: "",
@@ -57,6 +60,7 @@ export function EditTaskDialog({
       setFormData({
         name: task.name || "",
         description: task.description || "",
+        specificGoalId: task.specificGoalId || "",
         priority: task.priority || "MEDIUM",
         status: task.status || "TODO",
         estimatedDuration: task.estimatedDuration?.toString() || "",
@@ -67,6 +71,16 @@ export function EditTaskDialog({
         endDate: task.endDate ? new Date(task.endDate).toISOString().split('T')[0] : "",
         isCritical: task.isCritical || false,
       })
+
+      // Fetch specific goals for task's project
+      if (task.projectId) {
+        setLoadingSpecificGoals(true)
+        fetch(`/api/specific-goals?projectId=${task.projectId}`)
+          .then((res) => (res.ok ? res.json() : []))
+          .then((data) => setSpecificGoals(data))
+          .catch((err) => console.error("Error fetching specific goals:", err))
+          .finally(() => setLoadingSpecificGoals(false))
+      }
     }
   }, [task])
 
@@ -119,6 +133,7 @@ export function EditTaskDialog({
       const taskData = {
         name: formData.name,
         description: formData.description || undefined,
+        specificGoalId: formData.specificGoalId || null,
         priority: formData.priority,
         status: formData.status,
         estimatedDuration: finalEstimatedDuration,
@@ -189,6 +204,28 @@ export function EditTaskDialog({
               placeholder="Describe los detalles de la tarea..."
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-specificGoalId">Objetivo Específico (Opcional)</Label>
+            {loadingSpecificGoals ? (
+              <p className="text-xs text-muted-foreground">Cargando objetivos específicos...</p>
+            ) : (
+              <Select
+                id="edit-specificGoalId"
+                value={formData.specificGoalId}
+                onChange={(e) =>
+                  setFormData({ ...formData, specificGoalId: e.target.value })
+                }
+              >
+                <option value="">Ninguno (Sin asignar)</option>
+                {specificGoals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.name}
+                  </option>
+                ))}
+              </Select>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -20,6 +20,7 @@ import {
   Edit3,
   Trash2,
   Plus,
+  Target,
 } from "lucide-react"
 
 const priorityVariants = {
@@ -48,8 +49,10 @@ const statusColors = {
 export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [priorityFilter, setPriorityFilter] = useState("ALL")
+  const [goalFilter, setGoalFilter] = useState("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [tasks, setTasks] = useState<any[]>([])
+  const [specificGoals, setSpecificGoals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -61,6 +64,15 @@ export default function TasksPage() {
       if (res.ok) {
         const data = await res.json()
         setTasks(data)
+
+        // Extraer lista única de Objetivos Específicos
+        const goalsMap = new Map<string, any>()
+        data.forEach((t: any) => {
+          if (t.specificGoal) {
+            goalsMap.set(t.specificGoal.id, t.specificGoal)
+          }
+        })
+        setSpecificGoals(Array.from(goalsMap.values()))
       }
     } catch (error) {
       console.error("Error fetching tasks:", error)
@@ -129,8 +141,9 @@ export default function TasksPage() {
   const filteredTasks = tasks.filter((task) => {
     const matchesStatus = statusFilter === "ALL" || task.status === statusFilter
     const matchesPriority = priorityFilter === "ALL" || task.priority === priorityFilter
+    const matchesGoal = goalFilter === "ALL" || task.specificGoalId === goalFilter
     const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesStatus && matchesPriority && matchesSearch
+    return matchesStatus && matchesPriority && matchesGoal && matchesSearch
   })
 
   const stats = {
@@ -202,7 +215,7 @@ export default function TasksPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">Buscar</Label>
               <div className="relative">
@@ -245,6 +258,22 @@ export default function TasksPage() {
                 <option value="MEDIUM">Media</option>
                 <option value="HIGH">Alta</option>
                 <option value="CRITICAL">Crítica</option>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="goal">Objetivo Específico</Label>
+              <Select
+                id="goal"
+                value={goalFilter}
+                onChange={(e) => setGoalFilter(e.target.value)}
+              >
+                <option value="ALL">Todos los Objetivos</option>
+                {specificGoals.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
               </Select>
             </div>
           </div>
@@ -382,6 +411,13 @@ export default function TasksPage() {
                             <div className="flex items-center gap-1.5">
                               <span className="text-ink-muted">•</span>
                               <span className="font-medium text-electric-cyan">{task.project.name}</span>
+                            </div>
+                          )}
+
+                          {task.specificGoal && (
+                            <div className="flex items-center gap-1.5 text-primary">
+                              <Target className="w-3 h-3 text-electric-cyan" />
+                              <span className="font-medium">{task.specificGoal.name}</span>
                             </div>
                           )}
                         </div>

@@ -40,6 +40,12 @@ export async function GET(request: NextRequest) {
             name: true,
           },
         },
+        specificGoal: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         pertEstimation: true,
         dependencies: {
           include: {

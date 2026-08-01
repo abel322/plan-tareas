@@ -20,6 +20,7 @@ import {
 import Link from "next/link"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { EditTaskDialog } from "@/components/tasks/edit-task-dialog"
+import { CreateSpecificGoalDialog } from "@/components/projects/create-specific-goal-dialog"
 import dynamic from "next/dynamic"
 
 const GanttChart = dynamic(
@@ -30,12 +31,14 @@ const GanttChart = dynamic(
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
   const [createTaskDialogOpen, setCreateTaskDialogOpen] = useState(false)
+  const [createGoalDialogOpen, setCreateGoalDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<any>(null)
   const [project, setProject] = useState<any>(null)
   const [tasks, setTasks] = useState<any[]>([])
+  const [specificGoals, setSpecificGoals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<"tasks" | "gantt">("tasks")
+  const [activeTab, setActiveTab] = useState<"tasks" | "gantt" | "goals">("tasks")
 
   const fetchProjectData = async () => {
     try {
@@ -45,6 +48,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         const projectData = await projectRes.json()
         setProject(projectData)
         setTasks(projectData?.tasks || [])
+        setSpecificGoals(projectData?.specificGoals || [])
       } else {
         setProject(null)
       }
@@ -205,6 +209,25 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const criticalTasks = tasks.filter(t => t.isCritical).length
   const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0
 
+  const handleDeleteGoal = async (goal: any) => {
+    if (confirm(`¿Estás seguro de eliminar el objetivo "${goal.name}"?`)) {
+      try {
+        const res = await fetch(`/api/specific-goals/${goal.id}`, {
+          method: "DELETE",
+        })
+        if (res.ok) {
+          setSpecificGoals((prev) => prev.filter((g) => g.id !== goal.id))
+          fetchProjectData()
+        } else {
+          alert("Error al eliminar el objetivo específico")
+        }
+      } catch (error) {
+        console.error("Error deleting goal:", error)
+        alert("Error al eliminar el objetivo específico")
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Back Button */}
@@ -229,10 +252,16 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             {project.description || "Sin descripción"}
           </p>
         </div>
-        <Button className="gap-2 shrink-0 self-start sm:self-auto" onClick={() => setCreateTaskDialogOpen(true)}>
-          <Plus className="w-4 h-4" />
-          Nueva Tarea
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setCreateGoalDialogOpen(true)}>
+            <Target className="w-4 h-4 text-electric-cyan" />
+            Nuevo Objetivo
+          </Button>
+          <Button className="gap-2 shrink-0 self-start sm:self-auto" onClick={() => setCreateTaskDialogOpen(true)}>
+            <Plus className="w-4 h-4" />
+            Nueva Tarea
+          </Button>
+        </div>
       </div>
 
       <CreateTaskDialog
@@ -240,6 +269,13 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         onOpenChange={setCreateTaskDialogOpen}
         projectId={id}
         onTaskCreated={fetchProjectData}
+      />
+
+      <CreateSpecificGoalDialog
+        open={createGoalDialogOpen}
+        onOpenChange={setCreateGoalDialogOpen}
+        projectId={id}
+        onGoalCreated={fetchProjectData}
       />
 
       {/* Stats Grid */}
@@ -307,8 +343,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 <AlertCircle className="w-5 h-5 text-intelligence" />
               </div>
               <div>
-                <p className="text-sm text-ink-tertiary">Críticas</p>
-                <p className="text-2xl font-bold text-ink-primary">{criticalTasks}</p>
+                <p className="text-sm text-ink-tertiary">Objetivos Específicos</p>
+                <p className="text-2xl font-bold text-ink-primary">{specificGoals.length}</p>
               </div>
             </div>
           </CardContent>
@@ -325,7 +361,17 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface/10"
           }`}
         >
-          Lista de Tareas
+          Lista de Tareas ({tasks.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("goals")}
+          className={`px-6 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
+            activeTab === "goals"
+              ? "border-electric-cyan text-electric-cyan bg-electric-cyan/5"
+              : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface/10"
+          }`}
+        >
+          Objetivos Específicos ({specificGoals.length})
         </button>
         <button
           onClick={() => setActiveTab("gantt")}
@@ -341,7 +387,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Side Content (Tasks or Gantt) */}
+        {/* Left Side Content (Tasks, Goals or Gantt) */}
         <div className="lg:col-span-2 space-y-6">
           {activeTab === "tasks" ? (
             <Card className="border-border/30">
@@ -387,6 +433,11 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                             >
                               {task.name}
                             </p>
+                            {task.specificGoal && (
+                              <p className="text-xs text-electric-cyan mt-0.5">
+                                Target: {task.specificGoal.name}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
@@ -432,6 +483,134 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 )}
               </CardContent>
             </Card>
+          ) : activeTab === "goals" ? (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold tracking-tight text-ink-primary">
+                  Objetivos Específicos
+                </h2>
+                <Button size="sm" onClick={() => setCreateGoalDialogOpen(true)} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Agregar Objetivo
+                </Button>
+              </div>
+
+              {specificGoals.length === 0 ? (
+                <Card className="border-border/30">
+                  <CardContent className="py-12 text-center space-y-4">
+                    <Target className="w-12 h-12 text-electric-cyan mx-auto opacity-60" />
+                    <div className="space-y-1">
+                      <h3 className="text-base font-semibold text-ink-primary">No hay Objetivos Específicos</h3>
+                      <p className="text-sm text-ink-secondary">
+                        Crea objetivos específicos para estructurar jerárquicamente tu proyecto.
+                      </p>
+                    </div>
+                    <Button onClick={() => setCreateGoalDialogOpen(true)} variant="outline" className="gap-2 mt-2">
+                      <Plus className="w-4 h-4" />
+                      Crear Primer Objetivo
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {specificGoals.map((goal) => {
+                    const goalTasks = tasks.filter((t) => t.specificGoalId === goal.id)
+                    const completedGoalTasks = goalTasks.filter((t) => t.status === "COMPLETED").length
+                    const goalProgress =
+                      goalTasks.length > 0
+                        ? Math.round((completedGoalTasks / goalTasks.length) * 100)
+                        : 0
+
+                    return (
+                      <Card key={goal.id} className="border-border/40 hover:border-border/60 transition-all">
+                        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                          <div>
+                            <CardTitle className="text-lg font-bold text-ink-primary">
+                              {goal.name}
+                            </CardTitle>
+                            {goal.description && (
+                              <p className="text-sm text-ink-secondary mt-1">{goal.description}</p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-critical hover:bg-critical/10"
+                            onClick={() => handleDeleteGoal(goal)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </CardHeader>
+
+                        <CardContent className="space-y-4">
+                          {/* Goal Progress Bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-ink-secondary">Progreso del Objetivo</span>
+                              <span className="text-electric-cyan">{goalProgress}% ({completedGoalTasks}/{goalTasks.length} tareas)</span>
+                            </div>
+                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-electric-cyan transition-all duration-300"
+                                style={{ width: `${goalProgress}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Goal Tasks List */}
+                          <div className="pt-2">
+                            <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">
+                              Tareas Vinculadas ({goalTasks.length})
+                            </p>
+                            {goalTasks.length === 0 ? (
+                              <p className="text-xs text-ink-muted italic py-1">
+                                No hay tareas vinculadas a este objetivo.
+                              </p>
+                            ) : (
+                              <div className="space-y-2">
+                                {goalTasks.map((task) => (
+                                  <div
+                                    key={task.id}
+                                    className="flex items-center justify-between p-2.5 rounded-md bg-muted/40 border border-border/20 text-sm"
+                                  >
+                                    <div className="flex items-center gap-2.5">
+                                      <div
+                                        className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer ${
+                                          task.status === "COMPLETED"
+                                            ? "bg-success border-success text-midnight"
+                                            : "border-text-secondary"
+                                        }`}
+                                        onClick={(e) => handleToggleTaskStatus(task, e)}
+                                      >
+                                        {task.status === "COMPLETED" && (
+                                          <CheckCircle2 className="w-3 h-3 text-midnight" />
+                                        )}
+                                      </div>
+                                      <span
+                                        className={
+                                          task.status === "COMPLETED"
+                                            ? "line-through text-ink-tertiary"
+                                            : "text-ink-primary font-medium"
+                                        }
+                                      >
+                                        {task.name}
+                                      </span>
+                                    </div>
+                                    <Badge variant="outline" className="text-xs">
+                                      {task.status}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           ) : (
             <Card className="border-border/30">
               <CardHeader className="flex flex-row items-center justify-between">

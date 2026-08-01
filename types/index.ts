@@ -17,11 +17,23 @@ export interface Project {
   updatedAt: Date
 }
 
+export interface SpecificGoal {
+  id: string
+  name: string
+  description?: string | null
+  projectId: string
+  createdAt: Date
+  updatedAt: Date
+  tasks?: Task[]
+}
+
 export interface Task {
   id: string
   name: string
   description?: string | null
   projectId: string
+  specificGoalId?: string | null
+  specificGoal?: SpecificGoal | null
   assigneeId?: string | null
   priority: Priority
   status: TaskStatus
@@ -51,6 +63,7 @@ export interface CreateTaskInput {
   name: string
   description?: string
   projectId: string
+  specificGoalId?: string
   assigneeId?: string
   priority?: Priority
   status?: TaskStatus

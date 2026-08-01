@@ -13,8 +13,17 @@ export async function GET(
       where: { id },
       include: {
         objectives: true,
+        specificGoals: {
+          include: {
+            tasks: true,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
         tasks: {
           include: {
+            specificGoal: true,
             assignee: {
               select: {
                 id: true,
