@@ -485,11 +485,16 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             </Card>
           ) : activeTab === "goals" ? (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold tracking-tight text-ink-primary">
-                  Objetivos Específicos
-                </h2>
-                <Button size="sm" onClick={() => setCreateGoalDialogOpen(true)} className="gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-ink-primary">
+                    Objetivos Específicos & Secuencia
+                  </h2>
+                  <p className="text-xs text-ink-secondary mt-0.5">
+                    Estructura jerárquica con dependencias secuenciales e hitos en paralelo
+                  </p>
+                </div>
+                <Button size="sm" onClick={() => setCreateGoalDialogOpen(true)} className="gap-2 self-start sm:self-auto">
                   <Plus className="w-4 h-4" />
                   Agregar Objetivo
                 </Button>
@@ -512,102 +517,182 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">
-                  {specificGoals.map((goal) => {
-                    const goalTasks = tasks.filter((t) => t.specificGoalId === goal.id)
-                    const completedGoalTasks = goalTasks.filter((t) => t.status === "COMPLETED").length
-                    const goalProgress =
-                      goalTasks.length > 0
-                        ? Math.round((completedGoalTasks / goalTasks.length) * 100)
-                        : 0
-
-                    return (
-                      <Card key={goal.id} className="border-border/40 hover:border-border/60 transition-all">
-                        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                          <div>
-                            <CardTitle className="text-lg font-bold text-ink-primary">
-                              {goal.name}
-                            </CardTitle>
-                            {goal.description && (
-                              <p className="text-sm text-ink-secondary mt-1">{goal.description}</p>
+                <div className="space-y-6">
+                  {/* Visual Summary Flow */}
+                  <div className="p-4 border rounded-xl bg-muted/20 space-y-3">
+                    <h3 className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider">
+                      Esquema de Ejecución del Proyecto
+                    </h3>
+                    <div className="flex flex-wrap gap-2 items-center text-xs">
+                      {specificGoals.map((g, idx) => {
+                        const isParallel = !g.predecessorId
+                        const isBlocked = g.predecessorId && g.predecessor?.status !== "COMPLETED"
+                        return (
+                          <div key={g.id} className="flex items-center gap-1.5">
+                            <span
+                              className={`px-2.5 py-1 rounded-md border font-medium flex items-center gap-1.5 ${
+                                isParallel
+                                  ? "border-electric-cyan/40 bg-electric-cyan/10 text-electric-cyan"
+                                  : isBlocked
+                                  ? "border-warning/40 bg-warning/10 text-warning"
+                                  : "border-success/40 bg-success/10 text-success"
+                              }`}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                              {g.name}
+                              <span className="text-[10px] opacity-75">
+                                ({isParallel ? "Paralelo" : isBlocked ? "Bloqueado" : "Listo"})
+                              </span>
+                            </span>
+                            {idx < specificGoals.length - 1 && (
+                              <span className="text-ink-tertiary font-bold">→</span>
                             )}
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 text-critical hover:bg-critical/10"
-                            onClick={() => handleDeleteGoal(goal)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </CardHeader>
+                        )
+                      })}
+                    </div>
+                  </div>
 
-                        <CardContent className="space-y-4">
-                          {/* Goal Progress Bar */}
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-xs font-semibold">
-                              <span className="text-ink-secondary">Progreso del Objetivo</span>
-                              <span className="text-electric-cyan">{goalProgress}% ({completedGoalTasks}/{goalTasks.length} tareas)</span>
-                            </div>
-                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-electric-cyan transition-all duration-300"
-                                style={{ width: `${goalProgress}%` }}
-                              />
-                            </div>
-                          </div>
+                  {/* List of Goals */}
+                  <div className="space-y-4">
+                    {specificGoals.map((goal) => {
+                      const goalTasks = tasks.filter((t) => t.specificGoalId === goal.id)
+                      const completedGoalTasks = goalTasks.filter((t) => t.status === "COMPLETED").length
+                      const goalProgress =
+                        goalTasks.length > 0
+                          ? Math.round((completedGoalTasks / goalTasks.length) * 100)
+                          : 0
 
-                          {/* Goal Tasks List */}
-                          <div className="pt-2">
-                            <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">
-                              Tareas Vinculadas ({goalTasks.length})
-                            </p>
-                            {goalTasks.length === 0 ? (
-                              <p className="text-xs text-ink-muted italic py-1">
-                                No hay tareas vinculadas a este objetivo.
-                              </p>
-                            ) : (
-                              <div className="space-y-2">
-                                {goalTasks.map((task) => (
-                                  <div
-                                    key={task.id}
-                                    className="flex items-center justify-between p-2.5 rounded-md bg-muted/40 border border-border/20 text-sm"
-                                  >
-                                    <div className="flex items-center gap-2.5">
-                                      <div
-                                        className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer ${
-                                          task.status === "COMPLETED"
-                                            ? "bg-success border-success text-midnight"
-                                            : "border-text-secondary"
-                                        }`}
-                                        onClick={(e) => handleToggleTaskStatus(task, e)}
-                                      >
-                                        {task.status === "COMPLETED" && (
-                                          <CheckCircle2 className="w-3 h-3 text-midnight" />
-                                        )}
-                                      </div>
-                                      <span
-                                        className={
-                                          task.status === "COMPLETED"
-                                            ? "line-through text-ink-tertiary"
-                                            : "text-ink-primary font-medium"
-                                        }
-                                      >
-                                        {task.name}
-                                      </span>
-                                    </div>
-                                    <Badge variant="outline" className="text-xs">
-                                      {task.status}
-                                    </Badge>
-                                  </div>
-                                ))}
+                      const isParallel = !goal.predecessorId
+                      const predecessorName = goal.predecessor?.name
+                      const isPredecessorDone = goal.predecessor?.status === "COMPLETED"
+
+                      return (
+                        <Card
+                          key={goal.id}
+                          className={`border transition-all ${
+                            isParallel
+                              ? "border-border/40 hover:border-electric-cyan/50"
+                              : !isPredecessorDone
+                              ? "border-warning/30 bg-warning/5"
+                              : "border-success/30 bg-success/5"
+                          }`}
+                        >
+                          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                            <div className="space-y-1.5">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <CardTitle className="text-lg font-bold text-ink-primary">
+                                  {goal.name}
+                                </CardTitle>
+                                <Badge
+                                  variant={
+                                    goal.priority === "CRITICAL"
+                                      ? "critical"
+                                      : goal.priority === "HIGH"
+                                      ? "warning"
+                                      : "default"
+                                  }
+                                  className="text-xs"
+                                >
+                                  {goal.priority || "MEDIA"}
+                                </Badge>
+                                {isParallel ? (
+                                  <Badge variant="outline" className="text-xs border-electric-cyan/40 text-electric-cyan bg-electric-cyan/10">
+                                    Ejecución en Paralelo
+                                  </Badge>
+                                ) : !isPredecessorDone ? (
+                                  <Badge variant="outline" className="text-xs border-warning/40 text-warning bg-warning/10">
+                                    Secuencial - Bloqueado por: {predecessorName || "Predecesor"}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs border-success/40 text-success bg-success/10">
+                                    Secuencial - Desbloqueado (Predecesor Listo)
+                                  </Badge>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+                              {goal.description && (
+                                <p className="text-sm text-ink-secondary">{goal.description}</p>
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-critical hover:bg-critical/10 shrink-0"
+                              onClick={() => handleDeleteGoal(goal)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </CardHeader>
+
+                          <CardContent className="space-y-4">
+                            {/* Goal Progress Bar */}
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-xs font-semibold">
+                                <span className="text-ink-secondary">Progreso del Objetivo</span>
+                                <span className="text-electric-cyan">
+                                  {goalProgress}% ({completedGoalTasks}/{goalTasks.length} tareas)
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-electric-cyan transition-all duration-300"
+                                  style={{ width: `${goalProgress}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Goal Tasks List */}
+                            <div className="pt-2">
+                              <p className="text-xs font-semibold text-ink-tertiary uppercase tracking-wider mb-2">
+                                Tareas Vinculadas ({goalTasks.length})
+                              </p>
+                              {goalTasks.length === 0 ? (
+                                <p className="text-xs text-ink-muted italic py-1">
+                                  No hay tareas vinculadas a este objetivo.
+                                </p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {goalTasks.map((task) => (
+                                    <div
+                                      key={task.id}
+                                      className="flex items-center justify-between p-2.5 rounded-md bg-muted/40 border border-border/20 text-sm"
+                                    >
+                                      <div className="flex items-center gap-2.5">
+                                        <div
+                                          className={`w-4 h-4 rounded border flex items-center justify-center cursor-pointer ${
+                                            task.status === "COMPLETED"
+                                              ? "bg-success border-success text-midnight"
+                                              : "border-text-secondary"
+                                          }`}
+                                          onClick={(e) => handleToggleTaskStatus(task, e)}
+                                        >
+                                          {task.status === "COMPLETED" && (
+                                            <CheckCircle2 className="w-3 h-3 text-midnight" />
+                                          )}
+                                        </div>
+                                        <span
+                                          className={
+                                            task.status === "COMPLETED"
+                                              ? "line-through text-ink-tertiary"
+                                              : "text-ink-primary font-medium"
+                                          }
+                                        >
+                                          {task.name}
+                                        </span>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">
+                                        {task.status}
+                                      </Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>

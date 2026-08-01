@@ -15,6 +15,7 @@ export async function GET(
         objectives: true,
         specificGoals: {
           include: {
+            predecessor: true,
             tasks: true,
           },
           orderBy: {

@@ -19,7 +19,13 @@ export async function PATCH(
 
     const goal = await prisma.specificGoal.update({
       where: { id: params.id },
-      data: validatedData,
+      data: {
+        ...validatedData,
+        predecessorId: validatedData.predecessorId === "" ? null : validatedData.predecessorId,
+      },
+      include: {
+        predecessor: true,
+      },
     })
 
     return NextResponse.json(goal)

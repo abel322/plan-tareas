@@ -21,7 +21,12 @@ export interface SpecificGoal {
   id: string
   name: string
   description?: string | null
+  priority: Priority
+  status: TaskStatus
   projectId: string
+  predecessorId?: string | null
+  predecessor?: SpecificGoal | null
+  successors?: SpecificGoal[]
   createdAt: Date
   updatedAt: Date
   tasks?: Task[]

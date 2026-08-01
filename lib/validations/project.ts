@@ -15,7 +15,10 @@ export const updateProjectSchema = createProjectSchema.partial()
 export const createSpecificGoalSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(200),
   description: z.string().max(1000).optional(),
+  priority: z.string().default("MEDIUM"),
+  status: z.string().default("TODO"),
   projectId: z.string().min(1, "El ID del proyecto es requerido"),
+  predecessorId: z.string().optional().nullable(),
 })
 
 export const updateSpecificGoalSchema = createSpecificGoalSchema.partial().omit({ projectId: true })

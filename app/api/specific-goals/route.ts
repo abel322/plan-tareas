@@ -20,6 +20,21 @@ export async function GET(request: NextRequest) {
     const goals = await prisma.specificGoal.findMany({
       where,
       include: {
+        predecessor: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            priority: true,
+          },
+        },
+        successors: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+        },
         tasks: {
           select: {
             id: true,
@@ -58,7 +73,13 @@ export async function POST(request: NextRequest) {
     const validatedData = createSpecificGoalSchema.parse(body)
 
     const goal = await prisma.specificGoal.create({
-      data: validatedData,
+      data: {
+        ...validatedData,
+        predecessorId: validatedData.predecessorId || null,
+      },
+      include: {
+        predecessor: true,
+      },
     })
 
     return NextResponse.json(goal, { status: 201 })

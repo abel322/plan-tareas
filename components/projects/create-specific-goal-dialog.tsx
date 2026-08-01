@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Select } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 
 interface CreateSpecificGoalDialogProps {
@@ -29,10 +30,22 @@ export function CreateSpecificGoalDialog({
 }: CreateSpecificGoalDialogProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [existingGoals, setExistingGoals] = useState<any[]>([])
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    priority: "MEDIUM",
+    predecessorId: "",
   })
+
+  useEffect(() => {
+    if (open && projectId) {
+      fetch(`/api/specific-goals?projectId=${projectId}`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setExistingGoals(data))
+        .catch((err) => console.error("Error fetching goals:", err))
+    }
+  }, [open, projectId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +64,8 @@ export function CreateSpecificGoalDialog({
         body: JSON.stringify({
           name: formData.name,
           description: formData.description || undefined,
+          priority: formData.priority,
+          predecessorId: formData.predecessorId || undefined,
           projectId,
         }),
       })
@@ -68,6 +83,8 @@ export function CreateSpecificGoalDialog({
       setFormData({
         name: "",
         description: "",
+        priority: "MEDIUM",
+        predecessorId: "",
       })
     } catch (error: any) {
       console.error("Error:", error)
@@ -83,7 +100,7 @@ export function CreateSpecificGoalDialog({
         <DialogHeader>
           <DialogTitle>Crear Objetivo Específico</DialogTitle>
           <DialogDescription>
-            Define un objetivo específico para organizar y agrupar tareas en este proyecto.
+            Define un objetivo específico con prioridad y secuencia de ejecución para tu proyecto.
           </DialogDescription>
         </DialogHeader>
 
@@ -110,7 +127,51 @@ export function CreateSpecificGoalDialog({
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="goal-priority">Prioridad</Label>
+              <Select
+                id="goal-priority"
+                value={formData.priority}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+              >
+                <option value="LOW">Baja</option>
+                <option value="MEDIUM">Media</option>
+                <option value="HIGH">Alta</option>
+                <option value="CRITICAL">Crítica</option>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="goal-predecessor">Objetivo Predecesor</Label>
+              <Select
+                id="goal-predecessor"
+                value={formData.predecessorId}
+                onChange={(e) => setFormData({ ...formData, predecessorId: e.target.value })}
+              >
+                <option value="">Ninguno (En Paralelo)</option>
+                {existingGoals.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          <div className="p-3 border rounded-lg bg-muted/30 text-xs text-muted-foreground">
+            {formData.predecessorId ? (
+              <p>
+                <strong>Modo Secuencial:</strong> Este objetivo esperará a que el objetivo predecesor esté completado para poder ejecutarse.
+              </p>
+            ) : (
+              <p>
+                <strong>Modo Paralelo:</strong> Este objetivo se puede ejecutar de forma inmediata e independiente.
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
