@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { CreateSpecificGoalDialog } from "@/components/projects/create-specific-goal-dialog"
 
 interface CreateTaskDialogProps {
   open: boolean
@@ -35,6 +36,7 @@ export function CreateTaskDialog({
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [specificGoals, setSpecificGoals] = useState<any[]>([])
   const [loadingSpecificGoals, setLoadingSpecificGoals] = useState(false)
+  const [innerGoalDialogOpen, setInnerGoalDialogOpen] = useState(false)
   const [estimationMethod, setEstimationMethod] = useState<"CPM" | "PERT">("CPM")
   const [formData, setFormData] = useState({
     name: "",
@@ -84,34 +86,35 @@ export function CreateTaskDialog({
     }
   }, [open, projectId])
 
-  // Cargar tareas y Objetivos Específicos del proyecto seleccionado
-  useEffect(() => {
+  const fetchProjectDetails = async () => {
     const targetProjectId = projectId || formData.selectedProjectId
-    if (open && targetProjectId) {
-      const fetchProjectDetails = async () => {
-        setLoadingSpecificGoals(true)
-        try {
-          const [tasksRes, goalsRes] = await Promise.all([
-            fetch(`/api/tasks?projectId=${targetProjectId}`),
-            fetch(`/api/specific-goals?projectId=${targetProjectId}`),
-          ])
+    if (!targetProjectId) return
+    setLoadingSpecificGoals(true)
+    try {
+      const [tasksRes, goalsRes] = await Promise.all([
+        fetch(`/api/tasks?projectId=${targetProjectId}`),
+        fetch(`/api/specific-goals?projectId=${targetProjectId}`),
+      ])
 
-          if (tasksRes.ok) {
-            const tasksData = await tasksRes.json()
-            setProjectTasks(tasksData)
-          }
-
-          if (goalsRes.ok) {
-            const goalsData = await goalsRes.json()
-            setSpecificGoals(goalsData)
-          }
-        } catch (error) {
-          console.error("Error al cargar datos del proyecto:", error)
-        } finally {
-          setLoadingSpecificGoals(false)
-        }
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json()
+        setProjectTasks(tasksData)
       }
 
+      if (goalsRes.ok) {
+        const goalsData = await goalsRes.json()
+        setSpecificGoals(goalsData)
+      }
+    } catch (error) {
+      console.error("Error al cargar datos del proyecto:", error)
+    } finally {
+      setLoadingSpecificGoals(false)
+    }
+  }
+
+  // Cargar tareas y Objetivos Específicos del proyecto seleccionado
+  useEffect(() => {
+    if (open) {
       fetchProjectDetails()
     }
   }, [open, projectId, formData.selectedProjectId])
@@ -305,6 +308,20 @@ export function CreateTaskDialog({
                   </option>
                 ))}
               </Select>
+            )}
+            {!loadingSpecificGoals && (projectId || formData.selectedProjectId) && specificGoals.length === 0 && (
+              <div className="space-y-1">
+                <p className="text-xs text-amber-500 font-medium">
+                  Este proyecto no tiene Objetivos Específicos definidos.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setInnerGoalDialogOpen(true)}
+                  className="text-xs text-electric-cyan font-bold hover:underline"
+                >
+                  + Crear Objetivo Específico
+                </button>
+              </div>
             )}
           </div>
 
@@ -532,6 +549,12 @@ export function CreateTaskDialog({
           </div>
         </form>
       </DialogContent>
+      <CreateSpecificGoalDialog
+        open={innerGoalDialogOpen}
+        onOpenChange={setInnerGoalDialogOpen}
+        projectId={projectId || formData.selectedProjectId}
+        onGoalCreated={fetchProjectDetails}
+      />
     </Dialog>
   )
 }

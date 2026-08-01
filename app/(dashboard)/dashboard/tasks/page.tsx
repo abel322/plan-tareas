@@ -49,9 +49,11 @@ const statusColors = {
 export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [priorityFilter, setPriorityFilter] = useState("ALL")
+  const [projectFilter, setProjectFilter] = useState("ALL")
   const [goalFilter, setGoalFilter] = useState("ALL")
   const [searchQuery, setSearchQuery] = useState("")
   const [tasks, setTasks] = useState<any[]>([])
+  const [projects, setProjects] = useState<any[]>([])
   const [specificGoals, setSpecificGoals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -64,15 +66,6 @@ export default function TasksPage() {
       if (res.ok) {
         const data = await res.json()
         setTasks(data)
-
-        // Extraer lista única de Objetivos Específicos
-        const goalsMap = new Map<string, any>()
-        data.forEach((t: any) => {
-          if (t.specificGoal) {
-            goalsMap.set(t.specificGoal.id, t.specificGoal)
-          }
-        })
-        setSpecificGoals(Array.from(goalsMap.values()))
       }
     } catch (error) {
       console.error("Error fetching tasks:", error)
@@ -81,9 +74,35 @@ export default function TasksPage() {
     }
   }
 
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch('/api/projects')
+      if (res.ok) {
+        const data = await res.json()
+        setProjects(data)
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error)
+    }
+  }
+
   useEffect(() => {
     fetchTasks()
+    fetchProjects()
   }, [])
+
+  useEffect(() => {
+    if (projectFilter === "ALL") {
+      setGoalFilter("ALL")
+      setSpecificGoals([])
+    } else {
+      setGoalFilter("ALL")
+      fetch(`/api/specific-goals?projectId=${projectFilter}`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setSpecificGoals(data))
+        .catch((err) => console.error("Error fetching specific goals:", err))
+    }
+  }, [projectFilter])
 
   const handleEditTask = (task: any, e: React.MouseEvent) => {
     e.preventDefault()
@@ -141,9 +160,10 @@ export default function TasksPage() {
   const filteredTasks = tasks.filter((task) => {
     const matchesStatus = statusFilter === "ALL" || task.status === statusFilter
     const matchesPriority = priorityFilter === "ALL" || task.priority === priorityFilter
+    const matchesProject = projectFilter === "ALL" || task.projectId === projectFilter
     const matchesGoal = goalFilter === "ALL" || task.specificGoalId === goalFilter
     const matchesSearch = task.name.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesStatus && matchesPriority && matchesGoal && matchesSearch
+    return matchesStatus && matchesPriority && matchesProject && matchesGoal && matchesSearch
   })
 
   const stats = {
@@ -215,7 +235,7 @@ export default function TasksPage() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label htmlFor="search">Buscar</Label>
               <div className="relative">
@@ -262,13 +282,34 @@ export default function TasksPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="project">Proyecto</Label>
+              <Select
+                id="project"
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+              >
+                <option value="ALL">Todos los Proyectos</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="goal">Objetivo Específico</Label>
               <Select
                 id="goal"
                 value={goalFilter}
                 onChange={(e) => setGoalFilter(e.target.value)}
+                disabled={projectFilter === "ALL"}
               >
-                <option value="ALL">Todos los Objetivos</option>
+                <option value="ALL">
+                  {projectFilter === "ALL"
+                    ? "Selecciona un Proyecto primero"
+                    : "Todos los Objetivos"}
+                </option>
                 {specificGoals.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.name}
