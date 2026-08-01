@@ -38,7 +38,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [tasks, setTasks] = useState<any[]>([])
   const [specificGoals, setSpecificGoals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<"tasks" | "gantt" | "goals">("tasks")
+  const [activeTab, setActiveTab] = useState<"goals" | "tasks" | "gantt">("goals")
 
   const fetchProjectData = async () => {
     try {
@@ -238,6 +238,26 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </Button>
       </Link>
 
+      {/* Step Banner if no specific goals exist */}
+      {specificGoals.length === 0 && (
+        <div className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+            <span>
+              <strong>Paso 1 Recomendado:</strong> Crea un <strong>Objetivo Específico</strong> antes de agregar tareas para estructurar adecuadamente la jerarquía de tu proyecto.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setCreateGoalDialogOpen(true)}
+            className="gap-1.5 shrink-0 bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold"
+          >
+            <Target className="w-3.5 h-3.5" />
+            Crear Objetivo Ahora
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="space-y-2">
@@ -252,15 +272,26 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             {project.description || "Sin descripción"}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => setCreateGoalDialogOpen(true)}>
-            <Target className="w-4 h-4 text-electric-cyan" />
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button
+            variant={specificGoals.length === 0 ? "default" : "outline"}
+            className={`gap-2 ${specificGoals.length === 0 ? "bg-electric-cyan text-midnight font-bold hover:bg-electric-cyan/90 shadow-lg shadow-electric-cyan/20" : ""}`}
+            onClick={() => setCreateGoalDialogOpen(true)}
+          >
+            <Target className="w-4 h-4" />
             Nuevo Objetivo
           </Button>
-          <Button className="gap-2 shrink-0 self-start sm:self-auto" onClick={() => setCreateTaskDialogOpen(true)}>
-            <Plus className="w-4 h-4" />
-            Nueva Tarea
-          </Button>
+          <div className="relative group">
+            <Button
+              className="gap-2 shrink-0 self-start sm:self-auto"
+              onClick={() => setCreateTaskDialogOpen(true)}
+              disabled={specificGoals.length === 0}
+              title={specificGoals.length === 0 ? "Crea primero un objetivo específico para asociarle tareas" : "Nueva Tarea"}
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Tarea
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -351,18 +382,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </Card>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs Reordered: Objetivos Específicos | Lista de Tareas | Diagrama de Gantt */}
       <div className="flex border-b border-border/20 pt-2">
-        <button
-          onClick={() => setActiveTab("tasks")}
-          className={`px-6 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
-            activeTab === "tasks"
-              ? "border-electric-cyan text-electric-cyan bg-electric-cyan/5"
-              : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface/10"
-          }`}
-        >
-          Lista de Tareas ({tasks.length})
-        </button>
         <button
           onClick={() => setActiveTab("goals")}
           className={`px-6 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
@@ -372,6 +393,16 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           }`}
         >
           Objetivos Específicos ({specificGoals.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("tasks")}
+          className={`px-6 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
+            activeTab === "tasks"
+              ? "border-electric-cyan text-electric-cyan bg-electric-cyan/5"
+              : "border-transparent text-text-secondary hover:text-text-primary hover:bg-surface/10"
+          }`}
+        >
+          Lista de Tareas ({tasks.length})
         </button>
         <button
           onClick={() => setActiveTab("gantt")}
@@ -387,102 +418,247 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Side Content (Tasks, Goals or Gantt) */}
+        {/* Left Side Content (Goals, Tasks or Gantt) */}
         <div className="lg:col-span-2 space-y-6">
           {activeTab === "tasks" ? (
-            <Card className="border-border/30">
-              <CardHeader>
-                <CardTitle>Tareas del Proyecto</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {tasks.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <p className="text-ink-secondary">No hay tareas en este proyecto</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {tasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`group relative flex items-center justify-between gap-4 p-4 rounded-lg border transition-all ${
-                          task.isCritical
-                            ? "border-intelligence/50 bg-intelligence/5 critical-path-glow"
-                            : "border-border/40 bg-surface/10 hover:bg-surface/30 hover:border-border/60"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all ${
-                              task.status === "COMPLETED"
-                                ? "bg-success border-success text-midnight"
-                                : "border-text-secondary hover:border-electric-cyan"
-                            }`}
-                            onClick={(e) => handleToggleTaskStatus(task, e)}
-                          >
-                            {task.status === "COMPLETED" && (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-midnight stroke-[3]" />
-                            )}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold tracking-tight text-ink-primary">
+                  Tareas Agrupadas por Objetivo Específico
+                </h2>
+                <Button
+                  size="sm"
+                  onClick={() => setCreateTaskDialogOpen(true)}
+                  disabled={specificGoals.length === 0}
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nueva Tarea
+                </Button>
+              </div>
+
+              {tasks.length === 0 ? (
+                <Card className="border-border/30">
+                  <CardContent className="py-12 text-center space-y-3">
+                    <p className="text-ink-secondary font-medium">No hay tareas en este proyecto</p>
+                    <p className="text-xs text-ink-tertiary">
+                      {specificGoals.length === 0
+                        ? "Crea un objetivo específico antes de comenzar a registrar tareas."
+                        : "Haz clic en 'Nueva Tarea' para vincular actividades a tus Objetivos Específicos."}
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {/* Group Tasks By Specific Goal */}
+                  {specificGoals.map((goal) => {
+                    const goalTasks = tasks.filter((t) => t.specificGoalId === goal.id)
+                    const completedGoalTasks = goalTasks.filter((t) => t.status === "COMPLETED").length
+                    const goalProgress =
+                      goalTasks.length > 0
+                        ? Math.round((completedGoalTasks / goalTasks.length) * 100)
+                        : 0
+
+                    return (
+                      <Card key={goal.id} className="border-border/40 overflow-hidden shadow-sm">
+                        <CardHeader className="bg-surface/30 py-3.5 px-4 flex flex-row items-center justify-between border-b border-border/30">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Target className="w-4.5 h-4.5 text-electric-cyan shrink-0" />
+                            <CardTitle className="text-base font-bold text-ink-primary truncate">
+                              {goal.name}
+                            </CardTitle>
+                            <Badge variant="outline" className="text-xs shrink-0 ml-1">
+                              {completedGoalTasks}/{goalTasks.length} Completadas
+                            </Badge>
                           </div>
-                          <div className="flex-1 pr-4 min-w-0">
-                            <p
-                              className={`font-semibold text-sm tracking-wide transition-all ${
-                                task.status === "COMPLETED"
-                                  ? "text-text-muted line-through opacity-70"
-                                  : "text-text-primary"
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-xs font-bold text-electric-cyan">{goalProgress}%</span>
+                            <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden hidden sm:block">
+                              <div
+                                className="h-full bg-electric-cyan transition-all duration-300"
+                                style={{ width: `${goalProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </CardHeader>
+
+                        <CardContent className="p-4">
+                          {goalTasks.length === 0 ? (
+                            <p className="text-xs text-ink-muted italic py-3 text-center">
+                              No hay tareas registradas para este objetivo específico.
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {goalTasks.map((task) => (
+                                <div
+                                  key={task.id}
+                                  className={`group relative flex items-center justify-between gap-4 p-4 rounded-lg border transition-all ${
+                                    task.isCritical
+                                      ? "border-intelligence/50 bg-intelligence/5 critical-path-glow"
+                                      : "border-border/40 bg-surface/10 hover:bg-surface/30 hover:border-border/60"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div
+                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all ${
+                                        task.status === "COMPLETED"
+                                          ? "bg-success border-success text-midnight"
+                                          : "border-text-secondary hover:border-electric-cyan"
+                                      }`}
+                                      onClick={(e) => handleToggleTaskStatus(task, e)}
+                                    >
+                                      {task.status === "COMPLETED" && (
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-midnight stroke-[3]" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1 pr-4 min-w-0">
+                                      <p
+                                        className={`font-semibold text-sm tracking-wide transition-all ${
+                                          task.status === "COMPLETED"
+                                            ? "text-text-muted line-through opacity-70"
+                                            : "text-text-primary"
+                                        }`}
+                                      >
+                                        {task.name}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {task.isCritical && (
+                                      <Badge variant="intelligence" className="text-xs">
+                                        Crítica
+                                      </Badge>
+                                    )}
+                                    <Badge
+                                      variant={
+                                        task.priority === "CRITICAL"
+                                          ? "critical"
+                                          : task.priority === "HIGH"
+                                          ? "warning"
+                                          : "default"
+                                      }
+                                      className="text-xs font-semibold"
+                                    >
+                                      {task.priority}
+                                    </Badge>
+                                    <div className="flex gap-1.5 ml-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8 w-8 p-0 border-border/60 hover:border-electric-cyan hover:bg-electric-cyan/20 transition-all"
+                                        onClick={(e) => handleEditTask(task, e)}
+                                      >
+                                        <Edit3 className="w-4 h-4 text-electric-cyan" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8 w-8 p-0 border-border/60 hover:border-critical hover:bg-critical/20 transition-all"
+                                        onClick={(e) => handleDeleteTask(task, e)}
+                                      >
+                                        <Trash2 className="w-4 h-4 text-critical" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+
+                  {/* Tasks without specificGoalId (if any exist) */}
+                  {tasks.some((t) => !t.specificGoalId) && (
+                    <Card className="border-border/30 overflow-hidden">
+                      <CardHeader className="bg-surface/20 py-3 px-4 border-b border-border/20">
+                        <CardTitle className="text-sm font-bold text-ink-tertiary">
+                          Otras Tareas (Sin Objetivo Asignado)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-3">
+                        {tasks
+                          .filter((t) => !t.specificGoalId)
+                          .map((task) => (
+                            <div
+                              key={task.id}
+                              className={`group relative flex items-center justify-between gap-4 p-4 rounded-lg border transition-all ${
+                                task.isCritical
+                                  ? "border-intelligence/50 bg-intelligence/5 critical-path-glow"
+                                  : "border-border/40 bg-surface/10 hover:bg-surface/30 hover:border-border/60"
                               }`}
                             >
-                              {task.name}
-                            </p>
-                            {task.specificGoal && (
-                              <p className="text-xs text-electric-cyan mt-0.5">
-                                Target: {task.specificGoal.name}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {task.isCritical && (
-                            <Badge variant="intelligence" className="text-xs">
-                              Crítica
-                            </Badge>
-                          )}
-                          <Badge
-                            variant={
-                              task.priority === "CRITICAL"
-                                ? "critical"
-                                : task.priority === "HIGH"
-                                ? "warning"
-                                : "default"
-                            }
-                            className="text-xs font-semibold"
-                          >
-                            {task.priority}
-                          </Badge>
-                          <div className="flex gap-1.5 ml-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 w-8 p-0 border-border/60 hover:border-electric-cyan hover:bg-electric-cyan/20 transition-all"
-                              onClick={(e) => handleEditTask(task, e)}
-                            >
-                              <Edit3 className="w-4 h-4 text-electric-cyan" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 w-8 p-0 border-border/60 hover:border-critical hover:bg-critical/20 transition-all"
-                              onClick={(e) => handleDeleteTask(task, e)}
-                            >
-                              <Trash2 className="w-4 h-4 text-critical" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div
+                                  className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition-all ${
+                                    task.status === "COMPLETED"
+                                      ? "bg-success border-success text-midnight"
+                                      : "border-text-secondary hover:border-electric-cyan"
+                                  }`}
+                                  onClick={(e) => handleToggleTaskStatus(task, e)}
+                                >
+                                  {task.status === "COMPLETED" && (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-midnight stroke-[3]" />
+                                  )}
+                                </div>
+                                <div className="flex-1 pr-4 min-w-0">
+                                  <p
+                                    className={`font-semibold text-sm tracking-wide transition-all ${
+                                      task.status === "COMPLETED"
+                                        ? "text-text-muted line-through opacity-70"
+                                        : "text-text-primary"
+                                    }`}
+                                  >
+                                    {task.name}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {task.isCritical && (
+                                  <Badge variant="intelligence" className="text-xs">
+                                    Crítica
+                                  </Badge>
+                                )}
+                                <Badge
+                                  variant={
+                                    task.priority === "CRITICAL"
+                                      ? "critical"
+                                      : task.priority === "HIGH"
+                                      ? "warning"
+                                      : "default"
+                                  }
+                                  className="text-xs font-semibold"
+                                >
+                                  {task.priority}
+                                </Badge>
+                                <div className="flex gap-1.5 ml-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 w-8 p-0 border-border/60 hover:border-electric-cyan hover:bg-electric-cyan/20 transition-all"
+                                    onClick={(e) => handleEditTask(task, e)}
+                                  >
+                                    <Edit3 className="w-4 h-4 text-electric-cyan" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 w-8 p-0 border-border/60 hover:border-critical hover:bg-critical/20 transition-all"
+                                    onClick={(e) => handleDeleteTask(task, e)}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-critical" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
           ) : activeTab === "goals" ? (
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

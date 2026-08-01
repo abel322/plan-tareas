@@ -136,6 +136,11 @@ export function CreateTaskDialog({
       return
     }
 
+    if (!formData.specificGoalId) {
+      alert("Por favor selecciona un Objetivo Específico para asociar a esta tarea")
+      return
+    }
+
     let finalEstimatedDuration: number | undefined
     let optimisticTime: number | undefined
     let mostLikelyTime: number | undefined
@@ -281,7 +286,7 @@ export function CreateTaskDialog({
 
           {/* Selección de Objetivo Específico */}
           <div className="space-y-2">
-            <Label htmlFor="specificGoalId">Objetivo Específico (Opcional)</Label>
+            <Label htmlFor="specificGoalId">Objetivo Específico *</Label>
             {loadingSpecificGoals ? (
               <p className="text-xs text-muted-foreground">Cargando objetivos específicos...</p>
             ) : (
@@ -291,8 +296,9 @@ export function CreateTaskDialog({
                 onChange={(e) =>
                   setFormData({ ...formData, specificGoalId: e.target.value })
                 }
+                required
               >
-                <option value="">Ninguno (Sin asignar)</option>
+                <option value="">Selecciona un Objetivo Específico...</option>
                 {specificGoals.map((goal) => (
                   <option key={goal.id} value={goal.id}>
                     {goal.name}
