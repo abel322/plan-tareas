@@ -21,6 +21,7 @@ model User {
   tasks              Task[]
   activityLogs       ActivityLog[]
   userSessions       UserSession[]
+  quickNotes         QuickNote[]
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 }
@@ -153,3 +154,16 @@ model ActivityLog {
   metadata  String?
   createdAt DateTime @default(now())
 }
+
+model QuickNote {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  content     String?
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+

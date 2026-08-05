@@ -14,6 +14,7 @@ import {
   X,
   LogOut,
   Target,
+  StickyNote,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Proyectos", href: "/dashboard/projects", icon: FolderKanban },
   { name: "Objetivos Específicos", href: "/dashboard/tasks", icon: Target },
+  { name: "Notas Rápidas", href: "/dashboard/quick-notes", icon: StickyNote },
   { name: "Análisis PERT/CPM", href: "/dashboard/analysis", icon: Network },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "Configuración", href: "/dashboard/settings", icon: Settings },
