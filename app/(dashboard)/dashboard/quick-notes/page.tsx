@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   StickyNote,
@@ -12,12 +12,15 @@ import {
   Inbox,
   Archive,
   RefreshCw,
+  Check,
+  X,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { QuickNoteForm } from "@/components/quick-notes/quick-note-form"
 import { QuickNoteCard, QuickNoteItem } from "@/components/quick-notes/quick-note-card"
 import { QuickNoteEditDialog } from "@/components/quick-notes/quick-note-edit-dialog"
+import { QuickNoteDeleteDialog } from "@/components/quick-notes/quick-note-delete-dialog"
 
 export default function QuickNotesPage() {
   const [activeTab, setActiveTab] = useState<"pending" | "completed">("pending")
@@ -28,6 +31,21 @@ export default function QuickNotesPage() {
   // Edit Dialog State
   const [editingNote, setEditingNote] = useState<QuickNoteItem | null>(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
+
+  // Delete Confirmation State
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  // Toast Notification State
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type })
+    setTimeout(() => {
+      setToast(null)
+    }, 3500)
+  }
 
   // Fetch Notes
   const fetchNotes = async () => {
@@ -114,21 +132,37 @@ export default function QuickNotesPage() {
     setNotes((prev) => prev.map((n) => (n.id === id ? updated : n)))
   }
 
-  const handleDelete = async (id: string) => {
-    // Optimistic remove
-    setNotes((prev) => prev.filter((n) => n.id !== id))
+  // Trigger Delete Modal
+  const handlePromptDelete = (id: string) => {
+    setDeletingNoteId(id)
+    setIsDeleteOpen(true)
+  }
+
+  // Execute Confirmed Delete
+  const handleConfirmDelete = async () => {
+    if (!deletingNoteId) return
 
     try {
-      const res = await fetch(`/api/quick-notes/${id}`, {
+      setIsDeleting(true)
+      const res = await fetch(`/api/quick-notes/${deletingNoteId}`, {
         method: "DELETE",
       })
 
       if (!res.ok) {
-        throw new Error("Error al eliminar la nota")
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || "Error al eliminar la nota")
       }
-    } catch (error) {
+
+      // Remove from state
+      setNotes((prev) => prev.filter((n) => n.id !== deletingNoteId))
+      setIsDeleteOpen(false)
+      setDeletingNoteId(null)
+      showToast("Nota eliminada correctamente", "success")
+    } catch (error: any) {
       console.error(error)
-      fetchNotes()
+      showToast(error.message || "Error al eliminar la nota", "error")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -144,7 +178,36 @@ export default function QuickNotesPage() {
   )
 
   return (
-    <div className="min-h-screen p-6 md:p-8 space-y-6 max-w-6xl mx-auto">
+    <div className="relative min-h-screen p-6 md:p-8 space-y-6 max-w-6xl mx-auto">
+      {/* Toast Notification Banner */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border border-border/40 bg-surface/90 text-text-primary text-sm font-medium"
+          >
+            {toast.type === "success" ? (
+              <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <Check className="w-3.5 h-3.5" />
+              </div>
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-critical/20 text-critical flex items-center justify-center shrink-0">
+                <X className="w-3.5 h-3.5" />
+              </div>
+            )}
+            <span>{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 text-text-tertiary hover:text-text-primary transition-colors p-0.5 rounded-md"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/30 pb-6">
         <div>
@@ -163,7 +226,7 @@ export default function QuickNotesPage() {
           </div>
         </div>
 
-        {/* Counter Badge */}
+        {/* Counter Badges */}
         <div className="flex items-center gap-2 self-start md:self-auto">
           <div className="px-3.5 py-1.5 rounded-full bg-surface-elevated border border-border/40 text-xs font-semibold text-text-secondary flex items-center gap-2 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-electric-cyan animate-pulse" />
@@ -279,7 +342,7 @@ export default function QuickNotesPage() {
                         setEditingNote(noteToEdit)
                         setIsEditOpen(true)
                       }}
-                      onDelete={handleDelete}
+                      onDelete={handlePromptDelete}
                     />
                   ))}
                 </AnimatePresence>
@@ -331,7 +394,7 @@ export default function QuickNotesPage() {
                     key={note.id}
                     note={note}
                     onToggleComplete={handleToggleComplete}
-                    onDelete={handleDelete}
+                    onDelete={handlePromptDelete}
                   />
                 ))}
               </AnimatePresence>
@@ -346,6 +409,14 @@ export default function QuickNotesPage() {
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
         onSave={handleSaveEdit}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <QuickNoteDeleteDialog
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
       />
     </div>
   )
